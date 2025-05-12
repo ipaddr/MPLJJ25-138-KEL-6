@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "164909332735",
+    "project_id": "sehealthyapp",
+    "storage_bucket": "sehealthyapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:164909332735:android:69761b090933267fbd34ca",
+        "android_client_info": {
+          "package_name": "com.example.sehealthyapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-UnJR7s7qf10OaOMzL9DO7oyLlc_cYT8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
