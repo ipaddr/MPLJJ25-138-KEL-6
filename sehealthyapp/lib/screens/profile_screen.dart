@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'first_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -84,7 +85,14 @@ class ProfileScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FirstScreen(),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.logout),
                 label: const Text('Log Out'),
                 style: ElevatedButton.styleFrom(

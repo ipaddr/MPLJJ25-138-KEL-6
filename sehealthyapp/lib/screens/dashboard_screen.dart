@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'schedule_screen.dart';
 import 'profile_screen.dart';
+import 'page_tbc_screening.dart';
+import 'page_health_checkup.dart';
+import 'page_health_history.dart';
+import 'page_resources.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -249,7 +253,7 @@ class CardHealthCheckup extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => CardHealthCheckup()),
+          MaterialPageRoute(builder: (_) => PageHealthCheckup()),
         );
       },
     );
@@ -270,7 +274,7 @@ class CardTBCScreening extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const CardTBCScreening()),
+          MaterialPageRoute(builder: (_) => const PageTBCScreening()),
         );
       },
     );
@@ -291,7 +295,7 @@ class CardHealthHistory extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const CardHealthHistory()),
+          MaterialPageRoute(builder: (_) => const PageHealthHistory()),
         );
       },
     );
@@ -312,7 +316,7 @@ class CardResources extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const CardResources()),
+          MaterialPageRoute(builder: (_) => const PageResources()),
         );
       },
     );
