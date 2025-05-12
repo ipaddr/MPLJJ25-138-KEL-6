@@ -1,0 +1,174 @@
+import 'package:flutter/material.dart';
+
+class ScheduleScreen extends StatelessWidget {
+  const ScheduleScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Schedule'),
+        centerTitle: true,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+      ),
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title: Upcoming Checkup
+            const Text(
+              'Upcoming Checkup',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+
+            // Upcoming Checkup Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDDEEFF),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  // Icon
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.bloodtype, color: Colors.blue),
+                  ),
+                  const SizedBox(width: 16),
+
+                  // Checkup Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Blood Pressure',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Apr 15, 2025',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Label + arrow
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'Tomorrow',
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Icon(Icons.arrow_forward_ios, size: 16),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Riwayat Checkup
+            _buildCheckupCard(
+              title: 'Regular Checkup',
+              date: 'Apr 15, 2025',
+              data: {'Blood Pressure': '120/80 mmHg', 'Heart Rate': '72 bpm'},
+            ),
+            _buildCheckupCard(
+              title: 'Blood Work',
+              date: 'Apr 10, 2025',
+              data: {'Glucose': '110 mg/dL', 'Cholesterol': '185 mg/dL'},
+            ),
+            _buildCheckupCard(
+              title: 'Blood Pressure Check',
+              date: 'Apr 5, 2025',
+              data: {'Blood Pressure': '118/78 mmHg', 'Heart Rate': '68 bpm'},
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCheckupCard({
+    required String title,
+    required String date,
+    required Map<String, String> data,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title & Date
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 4),
+          Text(date, style: const TextStyle(color: Colors.grey)),
+          const SizedBox(height: 12),
+
+          // Data medis
+          Wrap(
+            spacing: 20,
+            runSpacing: 4,
+            children:
+                data.entries
+                    .map(
+                      (e) => Text(
+                        '${e.key}: ${e.value}',
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    )
+                    .toList(),
+          ),
+          const SizedBox(height: 12),
+
+          // View Details Button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {},
+              child: const Text('View Details'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
