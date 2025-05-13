@@ -1,6 +1,7 @@
 name: sehealthyapp
-description: "A new Flutter project."
-publish_to: "none"
+description: A new Flutter project.
+
+publish_to: 'none' # Private package, not published to pub.dev
 
 version: 1.0.0+1
 
@@ -11,11 +12,15 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Tambahkan plugin Firebase Core
+  # Firebase dependencies
   firebase_core: ^2.24.2
-  firebase_auth: ^4.17.6
   cloud_firestore: ^4.15.6
   google_sign_in: ^6.2.1
+  cloud_firestore: ^4.14.0        # Firestore database
+  firebase_auth: ^4.17.7          # Authentication
+  firebase_storage: ^11.6.7       # File storage (e.g., image uploads)
+
+  # UI & icon support
   cupertino_icons: ^1.0.8
   # firebase_storage: ^11.6.7
 
@@ -38,3 +43,6 @@ flutter:
           weight: 500
         - asset: assets/font/Poppins-Bold.ttf
           weight: 700
+          
+  uses-material-design: true
+
