@@ -49,6 +49,8 @@ class AuthService {
   // 🔐 Login dengan Google
   Future<String?> signInWithGoogle() async {
     try {
+      await GoogleSignIn().signOut(); // Tambahkan ini sebelum signIn()
+
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) return 'Login dibatalkan';
 
