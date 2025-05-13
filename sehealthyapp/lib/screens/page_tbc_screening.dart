@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class PageTBCScreening extends StatefulWidget {
-  const PageTBCScreening({Key? key}) : super(key: key);
+  const PageTBCScreening({super.key});
 
   @override
   State<PageTBCScreening> createState() => _PageTbcScreeningState();
