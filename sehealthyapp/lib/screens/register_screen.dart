@@ -1,12 +1,63 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart'; // pastikan path ini sesuai
 
-class RegisterScreen extends StatelessWidget {
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
-  RegisterScreen({super.key});
+  final AuthService _authService = AuthService();
+  bool _isLoading = false;
+
+  void _register() async {
+    final name = nameController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
+
+    if (password != confirmPassword) {
+      _showMessage('Password dan konfirmasi tidak cocok');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final errorMessage = await _authService.registerWithEmail(
+        name,
+        email,
+        password,
+      );
+      if (errorMessage == null) {
+        _showMessage('Berhasil daftar!');
+        Navigator.pop(context); // kembali ke login atau home
+      } else {
+        _showMessage(errorMessage); // Tampilkan pesan error dari Firebase
+      }
+    } catch (e) {
+      _showMessage(e.toString());
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +85,6 @@ class RegisterScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 10),
-                        // Logo and Title
                         Center(
                           child: Column(
                             children: [
@@ -76,7 +126,6 @@ class RegisterScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 20),
-
                         buildLabel('Full Name'),
                         buildTextField(
                           controller: nameController,
@@ -84,7 +133,6 @@ class RegisterScreen extends StatelessWidget {
                           icon: Icons.person_outline,
                         ),
                         const SizedBox(height: 8),
-
                         buildLabel('Email'),
                         buildTextField(
                           controller: emailController,
@@ -92,7 +140,6 @@ class RegisterScreen extends StatelessWidget {
                           icon: Icons.email_outlined,
                         ),
                         const SizedBox(height: 8),
-
                         buildLabel('Password'),
                         buildTextField(
                           controller: passwordController,
@@ -101,7 +148,6 @@ class RegisterScreen extends StatelessWidget {
                           obscure: true,
                         ),
                         const SizedBox(height: 8),
-
                         buildLabel('Confirm Password'),
                         buildTextField(
                           controller: confirmPasswordController,
@@ -110,8 +156,6 @@ class RegisterScreen extends StatelessWidget {
                           obscure: true,
                         ),
                         const SizedBox(height: 8),
-
-                        // Checkbox
                         Row(
                           children: [
                             Checkbox(value: true, onChanged: (_) {}),
@@ -142,12 +186,10 @@ class RegisterScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-
-                        // Sign Up Button
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: _isLoading ? null : _register,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2563EB),
                               foregroundColor: Colors.white,
@@ -155,15 +197,18 @@ class RegisterScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Sign Up',
-                              style: TextStyle(fontSize: 14),
-                            ),
+                            child:
+                                _isLoading
+                                    ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                    : const Text(
+                                      'Sign Up',
+                                      style: TextStyle(fontSize: 14),
+                                    ),
                           ),
                         ),
                         const SizedBox(height: 4),
-
-                        // Already have an account
                         Center(
                           child: TextButton(
                             onPressed: () {

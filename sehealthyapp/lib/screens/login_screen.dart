@@ -1,14 +1,55 @@
 import 'package:flutter/material.dart';
-import 'register_screen.dart';
+import '/services/auth_service.dart';
 import '/screens/onboarding_screen.dart';
 import '/screens/password_recovery_screen.dart';
 import '/screens/dashboard_screen.dart';
+import '/screens/register_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
   LoginScreen({super.key});
+
+  final AuthService _authService = AuthService(); // Panggil AuthService
+
+  void _loginWithEmail(BuildContext context) async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      _showError(context, 'Email dan password tidak boleh kosong');
+      return;
+    }
+
+    String? result = await _authService.loginWithEmail(email, password);
+    if (result == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } else {
+      _showError(context, result);
+    }
+  }
+
+  void _loginWithGoogle(BuildContext context) async {
+    String? result = await _authService.signInWithGoogle();
+    if (result == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    } else {
+      _showError(context, result);
+    }
+  }
+
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,12 +69,10 @@ class LoginScreen extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        // agar bisa discroll di layar kecil
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Logo and Welcome Text
             Center(
               child: Column(
                 children: [
@@ -45,9 +84,8 @@ class LoginScreen extends StatelessWidget {
                     ),
                     child: Image.asset(
                       'assets/images/logo1.png',
-                      height: 40,
-                      width: 40,
-                      fit: BoxFit.contain,
+                      width: 60,
+                      height: 60,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -67,7 +105,6 @@ class LoginScreen extends StatelessWidget {
             ),
             const SizedBox(height: 27),
 
-            // Email Section
             const Text(
               'Email',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
@@ -91,7 +128,6 @@ class LoginScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // Password Section
             const Text(
               'Password',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
@@ -132,16 +168,10 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
 
-            // Login Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const DashboardScreen()),
-                  );
-                },
+                onPressed: () => _loginWithEmail(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
@@ -154,7 +184,6 @@ class LoginScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            // Divider Section
             Row(
               children: const [
                 Expanded(child: Divider()),
@@ -170,14 +199,10 @@ class LoginScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Google Button (Centered)
             Center(
               child: OutlinedButton.icon(
-                onPressed: () {},
-                icon: Image.asset(
-                  'assets/images/google_logo.png',
-                  height: 18,
-                ), // pastikan file ini ada
+                onPressed: () => _loginWithGoogle(context),
+                icon: Image.asset('assets/images/google_logo.png', height: 18),
                 label: const Text('Google', style: TextStyle(fontSize: 14)),
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(
@@ -187,7 +212,6 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
 
-            // Sign Up Link
             Center(
               child: TextButton(
                 onPressed: () {

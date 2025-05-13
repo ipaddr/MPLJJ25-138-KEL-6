@@ -1,6 +1,6 @@
 name: sehealthyapp
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -13,13 +13,11 @@ dependencies:
 
   # Tambahkan plugin Firebase Core
   firebase_core: ^2.24.2
-
-  # Tambahkan jika nanti pakai fitur-fitur ini
-  # firebase_auth: ^4.17.7
-  # cloud_firestore: ^4.14.0
-  # firebase_storage: ^11.6.7
-
+  firebase_auth: ^4.17.6
+  cloud_firestore: ^4.15.6
+  google_sign_in: ^6.2.1
   cupertino_icons: ^1.0.8
+  # firebase_storage: ^11.6.7
 
 dev_dependencies:
   flutter_test:
@@ -28,3 +26,15 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/images/
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/font/Poppins-Regular.ttf
+        - asset: assets/font/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/font/Poppins-Bold.ttf
+          weight: 700
