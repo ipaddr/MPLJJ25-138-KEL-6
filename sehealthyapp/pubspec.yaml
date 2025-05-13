@@ -1,6 +1,7 @@
 name: sehealthyapp
-description: "A new Flutter project."
-publish_to: 'none'
+description: A new Flutter project.
+
+publish_to: 'none' # Private package, not published to pub.dev
 
 version: 1.0.0+1
 
@@ -11,14 +12,13 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Tambahkan plugin Firebase Core
+  # Firebase dependencies
   firebase_core: ^2.24.2
+  cloud_firestore: ^4.14.0        # Firestore database
+  firebase_auth: ^4.17.7          # Authentication
+  firebase_storage: ^11.6.7       # File storage (e.g., image uploads)
 
-  # Tambahkan jika nanti pakai fitur-fitur ini
-  # firebase_auth: ^4.17.7
-  # cloud_firestore: ^4.14.0
-  # firebase_storage: ^11.6.7
-
+  # UI & icon support
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
