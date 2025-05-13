@@ -12,7 +12,20 @@
           "package_name": "com.example.sehealthyapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "164909332735-0c6ndvkd7b49k04148r216scj1ucrice.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sehealthyapp",
+            "certificate_hash": "49ba797512eef03f7a755f40ca296bf93744ad3a"
+          }
+        },
+        {
+          "client_id": "164909332735-pnvck4dqnin8tpast0a68mtc08ndl034.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC-UnJR7s7qf10OaOMzL9DO7oyLlc_cYT8"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "164909332735-pnvck4dqnin8tpast0a68mtc08ndl034.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "164909332735-f2pma4oe6r1d9ss7bb975kh1tpo8vog1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.sehealthyapp"
+              }
+            }
+          ]
         }
       }
     }
