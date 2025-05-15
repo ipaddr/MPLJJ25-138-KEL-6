@@ -1,18 +1,60 @@
-import 'package:flutter/material.dart'; // Import halaman PasswordResetScreen
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PasswordRecoveryScreen extends StatelessWidget {
-  const PasswordRecoveryScreen({super.key});
+  PasswordRecoveryScreen({Key? key}) : super(key: key);
+
+  final TextEditingController emailController = TextEditingController();
+
+  Future<void> _sendResetEmail(BuildContext context) async {
+    final email = emailController.text.trim();
+
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter your email.')));
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password reset email sent! Check your inbox.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+
+      // Setelah berhasil, bisa otomatis kembali ke halaman login
+      Navigator.pop(context);
+    } on FirebaseAuthException catch (e) {
+      String message = 'An error occurred.';
+      if (e.code == 'user-not-found') {
+        message = 'No user found for that email.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Invalid email address.';
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Something went wrong.')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final emailController = TextEditingController();
-
     return Scaffold(
       backgroundColor: const Color(0xFFEFF6FF),
       appBar: AppBar(
         backgroundColor: const Color(0xFFEFF6FF),
         elevation: 0,
-        automaticallyImplyLeading: false, // Menghapus tombol back di pojok kiri
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -20,7 +62,6 @@ class PasswordRecoveryScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 12),
-            // Logo dan Header tanpa kata SeHealthy
             Center(
               child: Column(
                 children: [
@@ -52,8 +93,6 @@ class PasswordRecoveryScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 35),
-
-            // Email
             Align(
               alignment: Alignment.centerLeft,
               child: const Text(
@@ -78,35 +117,11 @@ class PasswordRecoveryScreen extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // Tombol dengan icon di sebelah kanan
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  String email = emailController.text;
-
-                  // Validasi email kosong
-                  if (email.isEmpty) {
-                    // Tampilkan snackbar jika email kosong
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please enter your email.'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  } else {
-                    // Pindah ke halaman Password Reset
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PasswordResetScreen(),
-                      ),
-                    );
-                  }
-                },
+                onPressed: () => _sendResetEmail(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
@@ -125,14 +140,9 @@ class PasswordRecoveryScreen extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 12),
-
-            // Back to Login dengan icon setelah teks
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: const [
@@ -142,24 +152,10 @@ class PasswordRecoveryScreen extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 35),
           ],
         ),
       ),
-    );
-  }
-}
-
-// Halaman Password Reset (contoh halaman tujuan)
-class PasswordResetScreen extends StatelessWidget {
-  const PasswordResetScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Password Reset')),
-      body: Center(child: const Text('Password Reset Screen')),
     );
   }
 }

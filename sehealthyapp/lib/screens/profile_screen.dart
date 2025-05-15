@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'first_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  Future<String> _getUserName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+      return doc.data()?['fullName'] ?? 'User';
+    }
+    return 'Guest';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,27 +34,38 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Avatar + Name
-            Column(
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: AssetImage('assets/images/img4.png'),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Abdul Hafiz',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  'Patient ID: #12345',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ],
+            FutureBuilder<String>(
+              future: _getUserName(),
+              builder: (context, snapshot) {
+                String name = '...';
+                if (snapshot.connectionState == ConnectionState.done) {
+                  name = snapshot.data ?? 'User';
+                }
+                return Column(
+                  children: [
+                    // Ganti dengan icon profile jika mau
+                    CircleAvatar(
+                      radius: 35,
+                      backgroundColor: Colors.blueAccent,
+                      child: Icon(Icons.person, size: 40, color: Colors.white),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Text(
+                      'Patient ID: #12345',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 30),
-
-            // Personal Information
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -51,8 +77,6 @@ class ProfileScreen extends StatelessWidget {
             infoRow('NIK', '3275064509890001'),
             infoRow('Blood Type', 'A+'),
             const SizedBox(height: 30),
-
-            // Settings
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -65,8 +89,6 @@ class ProfileScreen extends StatelessWidget {
             settingTile(Icons.language, 'Language'),
             settingTile(Icons.lock, 'Privacy Settings'),
             const SizedBox(height: 30),
-
-            // Buttons
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(

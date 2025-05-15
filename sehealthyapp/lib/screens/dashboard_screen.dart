@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'schedule_screen.dart';
 import 'profile_screen.dart';
 import 'page_tbc_screening.dart';
@@ -51,8 +54,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-class DashboardContent extends StatelessWidget {
+class DashboardContent extends StatefulWidget {
   const DashboardContent({super.key});
+
+  @override
+  State<DashboardContent> createState() => _DashboardContentState();
+}
+
+class _DashboardContentState extends State<DashboardContent> {
+  String fullname = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserFullname();
+  }
+
+  Future<void> fetchUserFullname() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final doc =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .get();
+        setState(() {
+          fullname = doc.data()?['fullName'] ?? 'User';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        fullname = 'User';
+      });
+      print('Error fetching fullName: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,23 +101,25 @@ class DashboardContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                children: const [
+                children: [
+                  // Ganti dengan icon profile jika mau
                   CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/img4.png'),
-                    radius: 24,
+                    radius: 22,
+                    backgroundColor: Colors.blueAccent,
+                    child: Icon(Icons.person, size: 40, color: Colors.white),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Welcome, Hafiz!',
-                        style: TextStyle(
+                        'Welcome, $fullname!',
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
+                      const Text(
                         'Last check: Today',
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
@@ -253,7 +292,7 @@ class CardHealthCheckup extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => PageHealthCheckup()),
+          MaterialPageRoute(builder: (_) => const PageHealthCheckup()),
         );
       },
     );
