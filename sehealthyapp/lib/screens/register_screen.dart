@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/auth_service.dart'; // pastikan path ini sesuai
+import '../services/auth_service.dart';
+import 'login_screen.dart'; // Pastikan file ini ada dan sesuai
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -47,27 +48,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email,
         password,
       );
+
       if (errorMessage == null) {
         await FirebaseAuth.instance.currentUser?.sendEmailVerification();
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: const Text("Verifikasi Email"),
-                content: const Text(
-                  "Kami telah mengirimkan link verifikasi ke email kamu. "
-                  "Silakan verifikasi sebelum login.",
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pushReplacementNamed(context, '/login');
-                    },
-                    child: const Text("OK"),
-                  ),
-                ],
-              ),
+
+        _showMessage(
+          'Link verifikasi telah dikirim ke email kamu.',
+          bgColor: Colors.green,
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
       } else {
         _showMessage(errorMessage);
@@ -81,10 +73,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  void _showMessage(String message, {Color bgColor = Colors.redAccent}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: bgColor,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -131,7 +130,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   'assets/images/logo1.png',
                                   height: 36,
                                   width: 36,
-                                  fit: BoxFit.contain,
                                 ),
                               ),
                               const SizedBox(height: 8),

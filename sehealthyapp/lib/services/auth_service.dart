@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   // 🔐 Register dengan Email & Password
   Future<String?> registerWithEmail(
@@ -13,79 +14,123 @@ class AuthService {
     String password,
   ) async {
     try {
-      // Buat akun di Firebase Authentication
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+
       User? user = result.user;
+      if (user != null) {
+        await user.updateDisplayName(name);
+        await user.reload(); // Pastikan data user terupdate
 
-      // Update nama di Firebase Auth
-      await user!.updateDisplayName(name);
+        // Simpan data ke Firestore
+        await _firestore.collection('users').doc(user.uid).set({
+          'fullName': name,
+          'email': email,
+          'uid': user.uid,
+        });
+      }
 
-      // Simpan data user ke Firestore
-      await _firestore.collection('users').doc(user.uid).set({
-        'fullName': name,
-        'email': email,
-        'uid': user.uid,
-      });
-
-      return null; // null artinya sukses
+      return null; // sukses
     } on FirebaseAuthException catch (e) {
-      return e.message;
+      switch (e.code) {
+        case 'email-already-in-use':
+          return 'Email ini sudah digunakan. Silakan gunakan email lain.';
+        case 'invalid-email':
+          return 'Format email tidak valid.';
+        case 'weak-password':
+          return 'Password terlalu lemah. Gunakan minimal 6 karakter.';
+        default:
+          return 'Terjadi kesalahan saat mendaftar: ${e.message}';
+      }
+    } catch (e) {
+      return 'Terjadi kesalahan tidak terduga saat mendaftar.';
     }
   }
 
   // 🔑 Login dengan Email & Password
   Future<String?> loginWithEmail(String email, String password) async {
     try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
-      return null;
+      UserCredential result = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      User? user = result.user;
+      if (user != null && !user.emailVerified) {
+        await _auth.signOut(); // logout paksa
+        return 'Email belum diverifikasi. Silakan cek kotak masuk atau spam kamu.';
+      }
+
+      return null; // sukses
     } on FirebaseAuthException catch (e) {
-      return e.message;
+      print('FirebaseAuthException code: ${e.code}'); // Debug info
+      switch (e.code) {
+        case 'user-not-found':
+          return 'Akun dengan email ini tidak ditemukan.';
+        case 'wrong-password':
+          return 'Password yang kamu masukkan salah.';
+        case 'invalid-email':
+          return 'Format email tidak valid.';
+        case 'too-many-requests':
+          return 'Terlalu banyak percobaan login. Coba lagi nanti.';
+        default:
+          return 'Terjadi kesalahan saat login: ${e.message}';
+      }
+    } catch (e) {
+      return 'Terjadi kesalahan tidak terduga saat login.';
     }
   }
 
   // 🔐 Login dengan Google
   Future<String?> signInWithGoogle() async {
     try {
-      await GoogleSignIn().signOut(); // Tambahkan ini sebelum signIn()
+      await _googleSignIn.signOut(); // agar bisa pilih akun baru
 
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return 'Login dibatalkan';
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return 'Login dengan Google dibatalkan.';
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        return 'Gagal mendapatkan token autentikasi Google.';
+      }
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Login ke Firebase dengan kredensial Google
       UserCredential result = await _auth.signInWithCredential(credential);
       User? user = result.user;
 
-      // Jika user baru, simpan data ke Firestore
-      final userDoc = await _firestore.collection('users').doc(user!.uid).get();
-      if (!userDoc.exists) {
-        await _firestore.collection('users').doc(user.uid).set({
-          'fullName': user.displayName,
-          'email': user.email,
-          'uid': user.uid,
-        });
+      if (user != null) {
+        final userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+        if (!userDoc.exists) {
+          await _firestore.collection('users').doc(user.uid).set({
+            'fullName': user.displayName,
+            'email': user.email,
+            'uid': user.uid,
+          });
+        }
       }
 
-      return null;
+      return null; // sukses
+    } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException code: ${e.code}'); // Debug info
+      return 'Login dengan Google gagal: ${e.message}';
     } catch (e) {
-      return e.toString();
+      return 'Terjadi kesalahan tidak terduga saat login dengan Google.';
     }
   }
 
   // 🚪 Logout
   Future<void> logout() async {
     await _auth.signOut();
-    await GoogleSignIn().signOut(); // Jika login via Google
+    await _googleSignIn.signOut();
   }
 
   // 👤 Ambil user yang sedang login

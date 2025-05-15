@@ -6,13 +6,24 @@ import '/screens/dashboard_screen.dart';
 import '/screens/register_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
-  LoginScreen({super.key});
-
-  final AuthService _authService = AuthService(); // Panggil AuthService
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   void _loginWithEmail(BuildContext context) async {
     final email = emailController.text.trim();
@@ -24,17 +35,17 @@ class LoginScreen extends StatelessWidget {
     }
 
     String? result = await _authService.loginWithEmail(email, password);
+    print('Login result: $result'); // Tambahan debug print
+
     if (result == null) {
       final user = FirebaseAuth.instance.currentUser;
 
       if (user != null && user.emailVerified) {
-        // Email sudah diverifikasi → lanjut ke halaman utama
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
       } else {
-        // Email belum diverifikasi → logout dan beri pesan
         await FirebaseAuth.instance.signOut();
         showDialog(
           context: context,
@@ -71,9 +82,11 @@ class LoginScreen extends StatelessWidget {
   }
 
   void _showError(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
+    Future.delayed(Duration.zero, () {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    });
   }
 
   @override
@@ -175,8 +188,8 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 8),
+
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
