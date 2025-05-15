@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart'; // pastikan path ini sesuai
 
 class RegisterScreen extends StatefulWidget {
@@ -16,6 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final AuthService _authService = AuthService();
   bool _isLoading = false;
+  bool _agreeToTerms = false;
 
   void _register() async {
     final name = nameController.text.trim();
@@ -23,8 +25,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final password = passwordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
 
+    if (!_agreeToTerms) {
+      _showMessage(
+        'Kamu harus menyetujui syarat dan ketentuan terlebih dahulu.',
+      );
+      return;
+    }
+
     if (password != confirmPassword) {
-      _showMessage('Password dan konfirmasi tidak cocok');
+      _showMessage('Password dan konfirmasi tidak cocok.');
       return;
     }
 
@@ -39,10 +48,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password,
       );
       if (errorMessage == null) {
-        _showMessage('Berhasil daftar!');
-        Navigator.pop(context); // kembali ke login atau home
+        await FirebaseAuth.instance.currentUser?.sendEmailVerification();
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text("Verifikasi Email"),
+                content: const Text(
+                  "Kami telah mengirimkan link verifikasi ke email kamu. "
+                  "Silakan verifikasi sebelum login.",
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                    child: const Text("OK"),
+                  ),
+                ],
+              ),
+        );
       } else {
-        _showMessage(errorMessage); // Tampilkan pesan error dari Firebase
+        _showMessage(errorMessage);
       }
     } catch (e) {
       _showMessage(e.toString());
@@ -60,22 +88,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEFF6FF),
       appBar: AppBar(
         backgroundColor: const Color(0xFFEFF6FF),
         elevation: 0,
-        leading: BackButton(color: Colors.black),
+        leading: const BackButton(color: Colors.black),
       ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
-              physics:
-                  constraints.maxHeight < 600
-                      ? const BouncingScrollPhysics()
-                      : const NeverScrollableScrollPhysics(),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
@@ -158,7 +191,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            Checkbox(value: true, onChanged: (_) {}),
+                            Checkbox(
+                              value: _agreeToTerms,
+                              onChanged: (value) {
+                                setState(() {
+                                  _agreeToTerms = value ?? false;
+                                });
+                              },
+                            ),
                             const Expanded(
                               child: Text.rich(
                                 TextSpan(
@@ -186,6 +226,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 8),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -199,8 +240,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             child:
                                 _isLoading
-                                    ? const CircularProgressIndicator(
-                                      color: Colors.white,
+                                    ? const SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
                                     )
                                     : const Text(
                                       'Sign Up',

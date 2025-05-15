@@ -4,6 +4,7 @@ import '/screens/onboarding_screen.dart';
 import '/screens/password_recovery_screen.dart';
 import '/screens/dashboard_screen.dart';
 import '/screens/register_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatelessWidget {
   final emailController = TextEditingController();
@@ -24,10 +25,34 @@ class LoginScreen extends StatelessWidget {
 
     String? result = await _authService.loginWithEmail(email, password);
     if (result == null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      );
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null && user.emailVerified) {
+        // Email sudah diverifikasi → lanjut ke halaman utama
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+      } else {
+        // Email belum diverifikasi → logout dan beri pesan
+        await FirebaseAuth.instance.signOut();
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text("Email Belum Diverifikasi"),
+                content: const Text(
+                  "Silakan cek email kamu dan klik link verifikasi sebelum login.",
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  ),
+                ],
+              ),
+        );
+      }
     } else {
       _showError(context, result);
     }
