@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'onboarding_screen.dart';
+import 'admin/admin_onboarding.dart';
 
 class ChooseRoleScreen extends StatelessWidget {
   const ChooseRoleScreen({super.key});
@@ -55,7 +56,13 @@ class ChooseRoleScreen extends StatelessWidget {
               subtitle: 'Kelola layanan kesehatan',
               buttonText: 'Pilih sebagai Admin',
               onPressed: () {
-                // Aksi untuk Admin, bisa diarahkan ke halaman lain atau admin login
+                // Navigasi ke halaman Onboarding
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const OnboardingAdminScreen(),
+                  ),
+                );
               },
             ),
           ],
