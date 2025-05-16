@@ -20,9 +20,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   void _onSave() {
     // Logic simpan data
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile saved')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Profile saved')));
   }
 
   void _onCancel() {
@@ -96,7 +96,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         border: Border.all(color: Colors.white, width: 2),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                        icon: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                         onPressed: () {
                           // Logic edit foto profil
                         },
@@ -163,7 +167,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
                 filled: true,
                 fillColor: Colors.white,
               ),
@@ -190,7 +197,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
                 filled: true,
                 fillColor: Colors.white,
               ),
@@ -218,9 +228,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
             const SizedBox(height: 12),
 
             // Settings List
-            _buildSettingItem(Icons.notifications, 'Notification Preferences', () {
-              // Logic Notification Preferences
-            }),
+            _buildSettingItem(
+              Icons.notifications,
+              'Notification Preferences',
+              () {
+                // Logic Notification Preferences
+              },
+            ),
             _buildSettingItem(Icons.language, 'Language', () {
               // Logic Language Settings
             }),
@@ -233,7 +247,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             // Save Button
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 42,
               child: ElevatedButton(
                 onPressed: _onSave,
                 style: ElevatedButton.styleFrom(
@@ -256,7 +270,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             // Cancel Button
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 42,
               child: ElevatedButton(
                 onPressed: _onCancel,
                 style: ElevatedButton.styleFrom(

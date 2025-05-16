@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'checkup_detail.dart';
 
 class ScheduleScreen extends StatelessWidget {
   const ScheduleScreen({super.key});
@@ -98,16 +99,19 @@ class ScheduleScreen extends StatelessWidget {
 
             // Riwayat Checkup
             _buildCheckupCard(
+              context: context, // <-- kirim context di sini
               title: 'Regular Checkup',
               date: 'Apr 15, 2025',
               data: {'Blood Pressure': '120/80 mmHg', 'Heart Rate': '72 bpm'},
             ),
             _buildCheckupCard(
+              context: context,
               title: 'Blood Work',
               date: 'Apr 10, 2025',
               data: {'Glucose': '110 mg/dL', 'Cholesterol': '185 mg/dL'},
             ),
             _buildCheckupCard(
+              context: context,
               title: 'Blood Pressure Check',
               date: 'Apr 5, 2025',
               data: {'Blood Pressure': '118/78 mmHg', 'Heart Rate': '68 bpm'},
@@ -118,7 +122,9 @@ class ScheduleScreen extends StatelessWidget {
     );
   }
 
+  // Tambahkan parameter BuildContext context
   Widget _buildCheckupCard({
+    required BuildContext context,
     required String title,
     required String date,
     required Map<String, String> data,
@@ -163,7 +169,14 @@ class ScheduleScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CheckupDetailScreen(),
+                  ),
+                );
+              },
               child: const Text('View Details'),
             ),
           ),
