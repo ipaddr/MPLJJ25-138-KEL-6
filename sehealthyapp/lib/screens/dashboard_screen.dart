@@ -6,7 +6,6 @@ import 'schedule_screen.dart';
 import 'profile_screen.dart';
 import 'page_tbc_screening.dart';
 import 'page_health_checkup.dart';
-import 'page_health_history.dart';
 import 'page_resources.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -334,7 +333,7 @@ class CardHealthHistory extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const PageHealthHistory()),
+          MaterialPageRoute(builder: (_) => const ScheduleScreen()),
         );
       },
     );

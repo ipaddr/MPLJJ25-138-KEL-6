@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'edit_checkup_detail.dart';
+import 'checkup_detail_edit.dart';
 
 class CheckupDetailScreen extends StatelessWidget {
   const CheckupDetailScreen({super.key});
@@ -144,7 +144,7 @@ class CheckupDetailScreen extends StatelessWidget {
                   Text(
                     testTitle,
                     style: const TextStyle(
-                      fontSize: 21,
+                      fontSize: 19,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -156,7 +156,7 @@ class CheckupDetailScreen extends StatelessWidget {
                       Text(
                         testValue,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: Colors.orange,
                         ),
@@ -193,7 +193,7 @@ class CheckupDetailScreen extends StatelessWidget {
                             'Dr. Abdul Hafiz',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontSize: 15,
                             ),
                           ),
                           Text(
@@ -209,7 +209,7 @@ class CheckupDetailScreen extends StatelessWidget {
                     'All vital signs and blood test results are within normal range. '
                     'Slight elevation in glucose levels, but not concerning. '
                     'Recommend regular exercise and balanced diet. Follow-up in 6 months.',
-                    style: TextStyle(fontSize: 14),
+                    style: TextStyle(fontSize: 13),
                   ),
                 ],
               ),
