@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'admin_login.dart';
-import '/screens/choose_role_screen.dart'; // Untuk kembali ke pemilihan role
+import 'admin_register_screen.dart';
+import '/screens/choose_role_screen.dart';
 
 class OnboardingAdminScreen extends StatelessWidget {
   const OnboardingAdminScreen({super.key});
@@ -27,7 +28,7 @@ class OnboardingAdminScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/img1.png', height: 250),
+            Image.asset('assets/images/img1.png', height: 250), // Ganti dengan gambar kamu
             const SizedBox(height: 24),
             const Text(
               'Welcome, Admin!',
@@ -45,7 +46,7 @@ class OnboardingAdminScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => AdminLoginScreen()),
+                  MaterialPageRoute(builder: (_) => const AdminRegisterScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -61,10 +62,10 @@ class OnboardingAdminScreen extends StatelessWidget {
             const SizedBox(height: 16),
             TextButton(
               onPressed: () {
-                // Navigator.pushReplacement(
-                //   context,
-                //   MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
-                // );
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+                );
               },
               child: const Text.rich(
                 TextSpan(
