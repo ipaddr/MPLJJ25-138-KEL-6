@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'admin_register_screen.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -37,7 +38,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
       if (user != null && user.emailVerified) {
         if (user.email!.endsWith('@adminsehealthy.com')) {
-          // Tempatkan Navigator ke Admin Dashboard di sini nanti
+          // TODO: Navigasi ke dashboard admin
         } else {
           await FirebaseAuth.instance.signOut();
           _showError(context, 'Akun ini tidak memiliki akses admin');
@@ -62,19 +63,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   void _showVerificationDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text("Email Belum Diverifikasi"),
-            content: const Text(
-              "Silakan cek email dan klik link verifikasi sebelum login.",
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text("Email Belum Diverifikasi"),
+        content: const Text("Silakan cek email dan klik link verifikasi sebelum login."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
           ),
+        ],
+      ),
     );
   }
 
@@ -124,7 +122,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               ),
             ),
             const SizedBox(height: 27),
-
             const Text(
               'Email',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
@@ -134,20 +131,14 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               controller: emailController,
               style: const TextStyle(fontSize: 12),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 hintText: 'Enter your admin email',
                 hintStyle: const TextStyle(fontSize: 12),
                 prefixIcon: const Icon(Icons.email_outlined, size: 18),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
             const SizedBox(height: 10),
-
             const Text(
               'Password',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
@@ -158,20 +149,14 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               obscureText: true,
               style: const TextStyle(fontSize: 12),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 hintText: 'Enter your password',
                 hintStyle: const TextStyle(fontSize: 12),
                 prefixIcon: const Icon(Icons.lock_outline, size: 18),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
             const SizedBox(height: 20),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -189,6 +174,33 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 24),
+
+            // ⬇ Tambahan tombol "Sign Up"
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Don't have an account? "),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AdminRegisterScreen()),
+                      );
+                    },
+                    child: const Text(
+                      'Sign Up',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             const SizedBox(height: 35),
           ],
         ),
