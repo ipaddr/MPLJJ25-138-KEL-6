@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
-import 'choose_role_screen.dart'; // Pastikan sudah mengimport ChooseRoleScreen
+import 'choose_role_screen.dart';
+import 'register_screen.dart';  // Import RegisterScreen
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
@@ -10,7 +11,7 @@ class OnboardingScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFFEFF6FF),
-        elevation: 0, // Menghilangkan shadow bawah app bar
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
@@ -18,7 +19,7 @@ class OnboardingScreen extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (_) => const ChooseRoleScreen(),
-              ), // Arahkan ke halaman ChooseRoleScreen
+              ),
             );
           },
         ),
@@ -43,11 +44,13 @@ class OnboardingScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
+
+            // Get Started button navigates to RegisterScreen
             ElevatedButton(
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => LoginScreen()),
+                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -60,12 +63,15 @@ class OnboardingScreen extends StatelessWidget {
               ),
               child: const Text('Get Started', style: TextStyle(fontSize: 16)),
             ),
-            const SizedBox(height: 16), // Jarak antara tombol dan teks
+
+            const SizedBox(height: 16),
+
+            // Already have account? Log in navigates to LoginScreen
             TextButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => LoginScreen()),
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
                 );
               },
               child: const Text.rich(

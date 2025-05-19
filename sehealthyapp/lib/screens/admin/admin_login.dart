@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'admin_register_screen.dart';
+import 'admin_onboarding.dart';  // Import OnboardingAdminScreen
+import 'dashboard_admin.dart';   // Import DashboardAdmin
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -38,7 +40,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
       if (user != null && user.emailVerified) {
         if (user.email!.endsWith('@adminsehealthy.com')) {
-          // TODO: Navigasi ke dashboard admin
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardAdmin()),
+          );
         } else {
           await FirebaseAuth.instance.signOut();
           _showError(context, 'Akun ini tidak memiliki akses admin');
@@ -85,7 +90,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const OnboardingAdminScreen()),
+            );
+          },
         ),
       ),
       body: SingleChildScrollView(
@@ -175,8 +185,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // ⬇ Tambahan tombol "Sign Up"
             Center(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -200,7 +208,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 35),
           ],
         ),
