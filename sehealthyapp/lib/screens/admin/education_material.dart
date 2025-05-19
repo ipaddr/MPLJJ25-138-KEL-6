@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
 
-class EducationMaterialPage extends StatefulWidget {
+class EducationMaterialPage extends StatelessWidget {
   const EducationMaterialPage({Key? key}) : super(key: key);
 
   @override
-  State<EducationMaterialPage> createState() => _EducationMaterialPageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: const EducationMaterialPageBody(),
+    );
+  }
 }
 
-class _EducationMaterialPageState extends State<EducationMaterialPage> {
+class EducationMaterialPageBody extends StatefulWidget {
+  const EducationMaterialPageBody({Key? key}) : super(key: key);
+
+  @override
+  State<EducationMaterialPageBody> createState() => _EducationMaterialPageBodyState();
+}
+
+class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
   final TextEditingController _searchController = TextEditingController();
 
   final List<Map<String, String>> _allContents = [
@@ -59,7 +70,6 @@ class _EducationMaterialPageState extends State<EducationMaterialPage> {
   }
 
   void _onDelete(int index) {
-    // TODO: Logic hapus konten di index
     setState(() {
       _filteredContents.removeAt(index);
     });

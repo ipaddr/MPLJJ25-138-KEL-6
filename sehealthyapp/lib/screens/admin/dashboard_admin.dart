@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'admin_login.dart';
+import 'appointment_detail.dart';
+import 'education_material.dart';
 
 class DashboardAdmin extends StatefulWidget {
   const DashboardAdmin({Key? key}) : super(key: key);
@@ -18,6 +22,9 @@ class _DashboardAdminState extends State<DashboardAdmin> {
       'location': 'Rumah Sakit Terpadu',
       'statusColor': Colors.orange.shade100,
       'statusTextColor': Colors.orange.shade700,
+      'nationalId': '129383000238293',
+      'dob': '13 Feb 2004',
+      'preferredDate': '15 April 2025',
     },
     {
       'name': 'Mike Peterson',
@@ -26,11 +33,33 @@ class _DashboardAdminState extends State<DashboardAdmin> {
       'location': 'Rumah Sakit Terpadu',
       'statusColor': Colors.green.shade100,
       'statusTextColor': Colors.green.shade700,
+      'nationalId': '987654321098765',
+      'dob': '22 Oct 1990',
+      'preferredDate': '20 April 2025',
     },
   ];
 
+  void _logout() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+    );
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final List<Widget> _pages = [
+      _buildAppointments(),
+      EducationMaterialPageBody(), // lihat di bawah, custom widget tanpa scaffold
+    ];
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -39,7 +68,7 @@ class _DashboardAdminState extends State<DashboardAdmin> {
         title: Row(
           children: [
             CircleAvatar(
-              backgroundImage: AssetImage('assets/hospital_icon.png'), // ganti dengan gambar kamu
+              backgroundImage: const AssetImage('assets/hospital_icon.png'),
               radius: 18,
               backgroundColor: Colors.grey.shade200,
             ),
@@ -47,22 +76,25 @@ class _DashboardAdminState extends State<DashboardAdmin> {
             const Expanded(
               child: Text(
                 'Welcome, Rumah Sakit Terpadu!',
-                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 16),
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
               ),
             ),
             IconButton(
-              onPressed: () {
-                // TODO: logout action
-              },
+              onPressed: _logout,
               icon: Icon(Icons.logout, color: Colors.red.shade600),
+              tooltip: 'Logout',
             ),
           ],
         ),
       ),
-      body: _selectedIndex == 0 ? _buildAppointments() : _buildEducationPlaceholder(),
+      body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (i) => setState(() => _selectedIndex = i),
+        onTap: _onItemTapped,
         selectedItemColor: Colors.blue.shade700,
         unselectedItemColor: Colors.grey,
         items: const [
@@ -86,7 +118,13 @@ class _DashboardAdminState extends State<DashboardAdmin> {
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5, offset: Offset(0, 1))],
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 5,
+                  offset: Offset(0, 1),
+                )
+              ],
             ),
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -136,7 +174,12 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                   width: double.infinity,
                   child: TextButton(
                     onPressed: () {
-                      // TODO: handle view details
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AppointmentDetailScreen(appointment: appt),
+                        ),
+                      );
                     },
                     style: TextButton.styleFrom(
                       backgroundColor: Colors.grey.shade200,
@@ -150,20 +193,11 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                       style: TextStyle(color: Colors.black87),
                     ),
                   ),
-                )
+                ),
               ],
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildEducationPlaceholder() {
-    return const Center(
-      child: Text(
-        'Education content will appear here.',
-        style: TextStyle(color: Colors.grey),
       ),
     );
   }

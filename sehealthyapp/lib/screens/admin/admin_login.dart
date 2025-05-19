@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'admin_register_screen.dart';
-import 'admin_onboarding.dart';  // Import OnboardingAdminScreen
-import 'dashboard_admin.dart';   // Import DashboardAdmin
+import 'admin_onboarding.dart'; // Import OnboardingAdminScreen
+import 'dashboard_admin.dart';  // Import DashboardAdmin
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -16,6 +16,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -33,7 +34,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       return;
     }
 
+    setState(() => _isLoading = true);
+
     String? result = await _authService.loginWithEmail(email, password);
+
+    setState(() => _isLoading = false);
 
     if (result == null) {
       final user = FirebaseAuth.instance.currentUser;
@@ -42,7 +47,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         if (user.email!.endsWith('@adminsehealthy.com')) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const DashboardAdmin()),
+            MaterialPageRoute(builder: (_) => const DashboardAdmin()),
           );
         } else {
           await FirebaseAuth.instance.signOut();
@@ -170,7 +175,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => _loginAdmin(context),
+                onPressed: _isLoading ? null : () => _loginAdmin(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
@@ -178,10 +183,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
-                  'Login Admin',
-                  style: TextStyle(fontSize: 14),
-                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text(
+                        'Login Admin',
+                        style: TextStyle(fontSize: 14),
+                      ),
               ),
             ),
             const SizedBox(height: 24),
@@ -200,7 +211,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     child: const Text(
                       'Sign Up',
                       style: TextStyle(
-                        color: Colors.blue,
+                        color: Color(0xFF2563EB),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
