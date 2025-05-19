@@ -64,7 +64,7 @@ class _DashboardAdminState extends State<DashboardAdmin> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        titleSpacing: 16,
+        titleSpacing: 2,
         title: Row(
           children: [
             CircleAvatar(
@@ -75,11 +75,11 @@ class _DashboardAdminState extends State<DashboardAdmin> {
             const SizedBox(width: 12),
             const Expanded(
               child: Text(
-                'Welcome, Rumah Sakit Terpadu!',
+                'Welcome,\nRumah Sakit Terpadu!',
                 style: TextStyle(
                   color: Colors.black87,
                   fontWeight: FontWeight.w600,
-                  fontSize: 16,
+                  fontSize: 17,
                 ),
               ),
             ),

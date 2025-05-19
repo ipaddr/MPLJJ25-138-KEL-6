@@ -4,11 +4,8 @@ class EducationEditPage extends StatefulWidget {
   final bool isEdit;
   final Map<String, String>? initialData;
 
-  const EducationEditPage({
-    Key? key,
-    this.isEdit = false,
-    this.initialData,
-  }) : super(key: key);
+  const EducationEditPage({Key? key, this.isEdit = false, this.initialData})
+    : super(key: key);
 
   @override
   State<EducationEditPage> createState() => _EducationEditPageState();
@@ -55,11 +52,7 @@ class _EducationEditPageState extends State<EducationEditPage> {
     }
 
     // Simulasi penyimpanan sukses
-    Navigator.pop(context, {
-      'type': type,
-      'synopsis': synopsis,
-      'link': link,
-    });
+    Navigator.pop(context, {'type': type, 'synopsis': synopsis, 'link': link});
   }
 
   @override
@@ -69,7 +62,7 @@ class _EducationEditPageState extends State<EducationEditPage> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        titleSpacing: 16,
+        titleSpacing: 2,
         title: Row(
           children: [
             CircleAvatar(
@@ -80,8 +73,12 @@ class _EducationEditPageState extends State<EducationEditPage> {
             const SizedBox(width: 12),
             const Expanded(
               child: Text(
-                'Welcome, Rumah Sakit Terpadu!',
-                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 16),
+                'Welcome, \nRumah Sakit Terpadu!',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
               ),
             ),
             IconButton(
@@ -113,20 +110,26 @@ class _EducationEditPageState extends State<EducationEditPage> {
             DropdownButtonFormField<String>(
               value: _selectedType,
               hint: const Text('Select type of New'),
-              items: _typeOptions
-                  .map((type) => DropdownMenuItem(
-                        value: type,
-                        child: Text(type),
-                      ))
-                  .toList(),
+              items:
+                  _typeOptions
+                      .map(
+                        (type) =>
+                            DropdownMenuItem(value: type, child: Text(type)),
+                      )
+                      .toList(),
               onChanged: (value) {
                 setState(() {
                   _selectedType = value;
                 });
               },
               decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -135,7 +138,9 @@ class _EducationEditPageState extends State<EducationEditPage> {
               maxLines: 4,
               decoration: InputDecoration(
                 hintText: 'Enter Synopsis',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 contentPadding: const EdgeInsets.all(12),
               ),
             ),
@@ -144,8 +149,13 @@ class _EducationEditPageState extends State<EducationEditPage> {
               controller: _linkController,
               decoration: InputDecoration(
                 hintText: 'Insert Link (Video or Article)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
               ),
             ),
             const SizedBox(height: 32),
@@ -157,7 +167,9 @@ class _EducationEditPageState extends State<EducationEditPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     child: const Text('Cancel'),
                   ),
@@ -169,13 +181,15 @@ class _EducationEditPageState extends State<EducationEditPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     child: const Text('Save'),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

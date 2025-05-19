@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'education_edit.dart';
 
 class EducationMaterialPage extends StatelessWidget {
   const EducationMaterialPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: const EducationMaterialPageBody(),
-    );
+    return Scaffold(body: const EducationMaterialPageBody());
   }
 }
 
@@ -15,7 +14,8 @@ class EducationMaterialPageBody extends StatefulWidget {
   const EducationMaterialPageBody({Key? key}) : super(key: key);
 
   @override
-  State<EducationMaterialPageBody> createState() => _EducationMaterialPageBodyState();
+  State<EducationMaterialPageBody> createState() =>
+      _EducationMaterialPageBodyState();
 }
 
 class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
@@ -46,11 +46,12 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      _filteredContents = _allContents.where((content) {
-        final titleLower = content['title']!.toLowerCase();
-        final categoryLower = content['category']!.toLowerCase();
-        return titleLower.contains(query) || categoryLower.contains(query);
-      }).toList();
+      _filteredContents =
+          _allContents.where((content) {
+            final titleLower = content['title']!.toLowerCase();
+            final categoryLower = content['category']!.toLowerCase();
+            return titleLower.contains(query) || categoryLower.contains(query);
+          }).toList();
     });
   }
 
@@ -62,7 +63,10 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
   }
 
   void _onAddNew() {
-    // TODO: Logic untuk tambah konten baru
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => EducationEditPage()),
+    );
   }
 
   void _onEdit(int index) {
@@ -97,8 +101,13 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                   label: const Text('Add New'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue.shade700,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ],
@@ -112,8 +121,13 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
               decoration: InputDecoration(
                 hintText: 'Search content...',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
               ),
             ),
 
@@ -121,75 +135,83 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
 
             // List konten edukasi
             Expanded(
-              child: _filteredContents.isEmpty
-                  ? const Center(child: Text('No content found.'))
-                  : ListView.separated(
-                      itemCount: _filteredContents.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final content = _filteredContents[index];
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              // Thumbnail Placeholder
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade300,
-                                  borderRadius: BorderRadius.circular(8),
+              child:
+                  _filteredContents.isEmpty
+                      ? const Center(child: Text('No content found.'))
+                      : ListView.separated(
+                        itemCount: _filteredContents.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final content = _filteredContents[index];
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              // Title & subtitle
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      content['title'] ?? '',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${content['category']} • ${content['detail']}',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade700,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
+                              ],
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                // Thumbnail Placeholder
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade300,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
-                              ),
-                              // Edit & Delete Icons
-                              IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () => _onEdit(index),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.redAccent),
-                                onPressed: () => _onDelete(index),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                                const SizedBox(width: 16),
+                                // Title & subtitle
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        content['title'] ?? '',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${content['category']} • ${content['detail']}',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade700,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Edit & Delete Icons
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.blue,
+                                  ),
+                                  onPressed: () => _onEdit(index),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.redAccent,
+                                  ),
+                                  onPressed: () => _onDelete(index),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
             ),
           ],
         ),
