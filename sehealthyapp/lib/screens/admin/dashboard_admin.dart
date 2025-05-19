@@ -98,8 +98,14 @@ class _DashboardAdminState extends State<DashboardAdmin> {
         selectedItemColor: Colors.blue.shade700,
         unselectedItemColor: Colors.grey,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Appointments'),
-          BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Education'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Appointments',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.school_outlined),
+            label: 'Education',
+          ),
         ],
       ),
       backgroundColor: Colors.white,
@@ -123,7 +129,7 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                   color: Colors.black12,
                   blurRadius: 5,
                   offset: Offset(0, 1),
-                )
+                ),
               ],
             ),
             padding: const EdgeInsets.all(16),
@@ -134,11 +140,17 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                   children: [
                     Text(
                       appt['name'],
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: appt['statusColor'],
                         borderRadius: BorderRadius.circular(20),
@@ -161,7 +173,11 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.local_hospital, size: 18, color: Colors.grey.shade600),
+                    Icon(
+                      Icons.local_hospital,
+                      size: 18,
+                      color: Colors.grey.shade600,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       appt['location'],
@@ -177,10 +193,11 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => AppointmentDetailScreen(appointment: appt),
+                          builder: (_) => const AppointmentDetailScreen(),
                         ),
                       );
                     },
+
                     style: TextButton.styleFrom(
                       backgroundColor: Colors.grey.shade200,
                       padding: const EdgeInsets.symmetric(vertical: 12),

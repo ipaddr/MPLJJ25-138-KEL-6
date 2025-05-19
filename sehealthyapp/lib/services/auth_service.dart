@@ -22,7 +22,10 @@ class AuthService {
       User? user = result.user;
       if (user != null) {
         await user.updateDisplayName(name);
-        await user.reload(); // Pastikan data user terupdate
+        await user.reload();
+
+        // Kirim email verifikasi
+        await user.sendEmailVerification();
 
         // Simpan data ke Firestore
         await _firestore.collection('users').doc(user.uid).set({
@@ -59,13 +62,12 @@ class AuthService {
 
       User? user = result.user;
       if (user != null && !user.emailVerified) {
-        await _auth.signOut(); // logout paksa
-        return 'Email belum diverifikasi. Silakan cek kotak masuk atau spam kamu.';
+        await _auth.signOut();
+        return 'Email belum diverifikasi. Silakan cek kotak masuk atau folder spam.';
       }
 
       return null; // sukses
     } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException code: ${e.code}'); // Debug info
       switch (e.code) {
         case 'user-not-found':
           return 'Akun dengan email ini tidak ditemukan.';
@@ -80,6 +82,21 @@ class AuthService {
       }
     } catch (e) {
       return 'Terjadi kesalahan tidak terduga saat login.';
+    }
+  }
+
+  // 📩 Kirim ulang email verifikasi
+  Future<String?> resendEmailVerification() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();
+        return null;
+      } else {
+        return 'Email sudah diverifikasi atau user tidak ditemukan.';
+      }
+    } catch (e) {
+      return 'Gagal mengirim ulang email verifikasi.';
     }
   }
 
@@ -109,10 +126,11 @@ class AuthService {
       if (user != null) {
         final userDoc =
             await _firestore.collection('users').doc(user.uid).get();
+
         if (!userDoc.exists) {
           await _firestore.collection('users').doc(user.uid).set({
-            'fullName': user.displayName,
-            'email': user.email,
+            'fullName': user.displayName ?? '',
+            'email': user.email ?? '',
             'uid': user.uid,
           });
         }
@@ -120,7 +138,6 @@ class AuthService {
 
       return null; // sukses
     } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException code: ${e.code}'); // Debug info
       return 'Login dengan Google gagal: ${e.message}';
     } catch (e) {
       return 'Terjadi kesalahan tidak terduga saat login dengan Google.';
@@ -136,5 +153,26 @@ class AuthService {
   // 👤 Ambil user yang sedang login
   User? getCurrentUser() {
     return _auth.currentUser;
+  }
+
+  // ✅ Apakah user sudah login
+  bool isLoggedIn() {
+    return _auth.currentUser != null;
+  }
+
+  // 🗑️ Hapus akun (jika diperlukan)
+  Future<String?> deleteAccount() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).delete();
+        await user.delete();
+        return null;
+      } else {
+        return 'Tidak ada user yang login.';
+      }
+    } catch (e) {
+      return 'Gagal menghapus akun. Pastikan user baru saja login kembali.';
+    }
   }
 }

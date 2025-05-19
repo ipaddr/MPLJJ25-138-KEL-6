@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'admin_onboarding.dart'; // Import OnboardingAdminScreen
-import 'admin_login.dart'; // Import AdminLoginScreen untuk Log In
+import 'package:firebase_auth/firebase_auth.dart';
+import 'admin_onboarding.dart';
+import 'admin_login.dart';
 
 class AdminRegisterScreen extends StatefulWidget {
   const AdminRegisterScreen({Key? key}) : super(key: key);
@@ -17,15 +18,57 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   final confirmPasswordController = TextEditingController();
   bool agreeTerms = false;
 
-  void _onRegister() {
+  final List<String> allowedEmails = [
+    'abdulhafiz.contact@gmail.com',
+    'erpianapia@gmail.com',
+  ];
+
+  void _onRegister() async {
     if (_formKey.currentState!.validate()) {
       if (!agreeTerms) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please agree to the Terms and Privacy Policy")),
+          const SnackBar(
+            content: Text("Please agree to the Terms and Privacy Policy"),
+          ),
         );
         return;
       }
-      // TODO: Implement Firebase register logic here
+
+      final email = emailController.text.trim();
+
+      if (!allowedEmails.contains(email)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Email tidak diizinkan mendaftar")),
+        );
+        return;
+      }
+
+      try {
+        final credential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
+              email: email,
+              password: passwordController.text.trim(),
+            );
+
+        await credential.user?.sendEmailVerification();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Pendaftaran berhasil. Silakan verifikasi email kamu",
+            ),
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Pendaftaran gagal: ${e.toString()}")),
+        );
+      }
     }
   }
 
@@ -53,7 +96,10 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         prefixIcon: Icon(icon),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -63,10 +109,14 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         if (value == null || value.isEmpty) {
           return 'Required';
         }
+        if (controller == emailController && !value.contains('@')) {
+          return 'Enter a valid email';
+        }
         if (obscure && value.length < 6) {
           return 'Minimum 6 characters';
         }
-        if (controller == confirmPasswordController && value != passwordController.text) {
+        if (controller == confirmPasswordController &&
+            value != passwordController.text) {
           return 'Passwords do not match';
         }
         return null;
@@ -77,7 +127,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFD9E6FF), // Warna biru muda sesuai gambar
+      backgroundColor: const Color(0xFFD9E6FF),
       appBar: AppBar(
         backgroundColor: const Color(0xFFD9E6FF),
         elevation: 0,
@@ -104,7 +154,11 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 padding: const EdgeInsets.all(10),
-                child: Image.asset('assets/images/logo1.png', width: 50, height: 50),
+                child: Image.asset(
+                  'assets/images/logo1.png',
+                  width: 50,
+                  height: 50,
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
@@ -213,7 +267,9 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                     onTap: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const AdminLoginScreen(),
+                        ),
                       );
                     },
                     child: const Text(
@@ -223,7 +279,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
               const SizedBox(height: 20),

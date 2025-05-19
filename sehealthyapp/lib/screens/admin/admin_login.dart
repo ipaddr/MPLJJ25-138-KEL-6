@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'admin_register_screen.dart';
-import 'admin_onboarding.dart'; // Import OnboardingAdminScreen
-import 'dashboard_admin.dart';  // Import DashboardAdmin
+import 'admin_onboarding.dart';
+import 'dashboard_admin.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -36,53 +36,94 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
     setState(() => _isLoading = true);
 
-    String? result = await _authService.loginWithEmail(email, password);
+    try {
+      String? result = await _authService.loginWithEmail(email, password);
+      setState(() => _isLoading = false);
 
-    setState(() => _isLoading = false);
+      if (result == null) {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          await user.reload();
+          if (user.emailVerified) {
+            List<String> allowedAdmins = [
+              'abdulhafiz.contact@gmail.com',
+              'erpianapia@gmail.com',
+            ];
 
-    if (result == null) {
-      final user = FirebaseAuth.instance.currentUser;
-
-      if (user != null && user.emailVerified) {
-        if (user.email!.endsWith('@adminsehealthy.com')) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const DashboardAdmin()),
-          );
+            if (allowedAdmins.contains(user.email)) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const DashboardAdmin()),
+              );
+            } else {
+              await FirebaseAuth.instance.signOut();
+              _showError(context, 'Akun ini tidak memiliki akses admin');
+            }
+          } else {
+            await FirebaseAuth.instance.signOut();
+            _showVerificationDialog(context);
+          }
         } else {
-          await FirebaseAuth.instance.signOut();
-          _showError(context, 'Akun ini tidak memiliki akses admin');
+          _showError(context, 'User tidak ditemukan');
         }
       } else {
-        await FirebaseAuth.instance.signOut();
-        _showVerificationDialog(context);
+        _showError(context, result);
       }
-    } else {
-      _showError(context, result);
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showError(context, 'Terjadi kesalahan saat login: ${e.toString()}');
     }
   }
 
   void _showError(BuildContext context, String message) {
-    Future.delayed(Duration.zero, () {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
-    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   void _showVerificationDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Email Belum Diverifikasi"),
-        content: const Text("Silakan cek email dan klik link verifikasi sebelum login."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
+      builder:
+          (_) => AlertDialog(
+            title: const Text("Email Belum Diverifikasi"),
+            content: const Text(
+              "Silakan cek email Anda dan klik link verifikasi sebelum login.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user != null && !user.emailVerified) {
+                    try {
+                      await user.sendEmailVerification();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Link verifikasi telah dikirim ulang ke email Anda.',
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Gagal mengirim ulang verifikasi: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text("Kirim Ulang Email Verifikasi"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -146,11 +187,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               controller: emailController,
               style: const TextStyle(fontSize: 12),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
                 hintText: 'Enter your admin email',
                 hintStyle: const TextStyle(fontSize: 12),
                 prefixIcon: const Icon(Icons.email_outlined, size: 18),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -164,11 +210,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               obscureText: true,
               style: const TextStyle(fontSize: 12),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
                 hintText: 'Enter your password',
                 hintStyle: const TextStyle(fontSize: 12),
                 prefixIcon: const Icon(Icons.lock_outline, size: 18),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -183,16 +234,20 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text(
-                        'Login Admin',
-                        style: TextStyle(fontSize: 14),
-                      ),
+                child:
+                    _isLoading
+                        ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : const Text(
+                          'Login Admin',
+                          style: TextStyle(fontSize: 14),
+                        ),
               ),
             ),
             const SizedBox(height: 24),
@@ -205,7 +260,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AdminRegisterScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const AdminRegisterScreen(),
+                        ),
                       );
                     },
                     child: const Text(
