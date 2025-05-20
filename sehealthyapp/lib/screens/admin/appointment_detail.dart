@@ -1,226 +1,192 @@
 import 'package:flutter/material.dart';
 
 class AppointmentDetailScreen extends StatelessWidget {
-  const AppointmentDetailScreen({super.key});
+  final Map<String, dynamic> appointment;
+
+  const AppointmentDetailScreen({Key? key, required this.appointment}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Contoh data tambahan, sesuaikan jika data lebih lengkap
+    final String name = appointment['name'] ?? '-';
+    final String nationalId = appointment['nationalId'] ?? 'N/A';
+    final String dob = appointment['dob'] ?? 'N/A';
+    final String consultation = appointment['consultation'] ?? appointment['specialty'] ?? '-';
+    final String hospital = appointment['hospital'] ?? appointment['location'] ?? '-';
+    final String preferredDate = appointment['preferredDate'] ?? 'N/A';
+    final String status = appointment['status'] ?? '-';
+
+    Color statusColor;
+    switch (status.toLowerCase()) {
+      case 'pending':
+        statusColor = Colors.orange.shade300;
+        break;
+      case 'confirmed':
+        statusColor = Colors.green.shade300;
+        break;
+      case 'rejected':
+        statusColor = Colors.red.shade300;
+        break;
+      default:
+        statusColor = Colors.grey.shade300;
+    }
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
+        title: const Text('Appointment Details'),
         backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Appointment Details',
-          style: TextStyle(color: Colors.black87),
-        ),
+        leading: BackButton(color: Colors.black87),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      backgroundColor: const Color(0xFFF9FAFB),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionCard(
-              icon: Icons.person_outline,
-              title: 'Patient Information',
-              children: const [
-                _DetailRow(label: 'Full Name', value: 'Abdul Hafiz'),
-                _DetailRow(label: 'National ID', value: '129383000238293'),
-                _DetailRow(label: 'Date of Birth', value: '13 Feb 2004'),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildSectionCard(
-              icon: Icons.calendar_today_outlined,
-              title: 'Appointment Details',
-              children: const [
-                _DetailRow(
-                  label: 'Checkup Type',
-                  value: 'General Consultation',
+            // Patient Information
+            _sectionTitle(Icons.person, 'Patient Information'),
+            Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 1,
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _infoRow('Full Name', name),
+                    _infoRow('National ID', nationalId),
+                    _infoRow('Date of Birth', dob),
+                  ],
                 ),
-                _DetailRow(label: 'Hospital', value: 'Rumah Sakit Terpadu'),
-                _DetailRow(label: 'Preferred Date', value: '15 April 2025'),
-              ],
+              ),
             ),
-            const SizedBox(height: 16),
-            _buildStatusSection(context),
+            const SizedBox(height: 20),
+
+            // Appointment Details
+            _sectionTitle(Icons.calendar_today, 'Appointment Details'),
+            Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 1,
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _infoRow('Checkup Type', consultation),
+                    _infoRow('Hospital', hospital),
+                    _infoRow('Preferred Date', preferredDate),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Status and Notes
+            _sectionTitle(Icons.schedule, 'Status'),
+            Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 1,
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Status label
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        status,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Notes input
+                    const Text('Add Notes', style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: 'Add additional notes here...',
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.all(12),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Implement confirm logic here
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            child: const Text('Confirm Appointment'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              // Implement reject logic here
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.red),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            child: const Text(
+                              'Reject',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            )
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionCard({
-    required IconData icon,
-    required String title,
-    required List<Widget> children,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 20, color: Colors.blueAccent),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...children,
-        ],
-      ),
+  Widget _sectionTitle(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.blue.shade700),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+      ],
     );
   }
 
-  Widget _buildStatusSection(BuildContext context) {
-    final TextEditingController _notesController = TextEditingController();
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.info_outline, color: Colors.blue),
-              const SizedBox(width: 8),
-              const Text(
-                'Status',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'Pending',
-                  style: TextStyle(
-                    color: Colors.orange,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Add Notes',
-            style: TextStyle(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _notesController,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'Add additional notes here...',
-              filled: true,
-              fillColor: const Color(0xFFF3F4F6),
-              border: OutlineInputBorder(
-                borderSide: BorderSide.none,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                // Aksi konfirmasi
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Appointment Confirmed!')),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Confirm Appointment'),
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {
-                // Aksi penolakan
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Appointment Rejected.')),
-                );
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: const BorderSide(color: Colors.red),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Reject'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _DetailRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          SizedBox(
-            width: 130,
-            child: Text(label, style: const TextStyle(color: Colors.black54)),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-          ),
+          Text(label, style: const TextStyle(color: Colors.black54)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
     );

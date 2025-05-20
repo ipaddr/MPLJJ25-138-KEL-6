@@ -55,9 +55,10 @@ class _DashboardAdminState extends State<DashboardAdmin> {
 
   @override
   Widget build(BuildContext context) {
+    // Daftar halaman untuk BottomNavigationBar
     final List<Widget> _pages = [
       _buildAppointments(),
-      EducationMaterialPageBody(), // lihat di bawah, custom widget tanpa scaffold
+      const EducationMaterialPage(),  // Asumsi EducationMaterialPage memiliki Scaffold
     ];
 
     return Scaffold(
@@ -129,7 +130,7 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                   color: Colors.black12,
                   blurRadius: 5,
                   offset: Offset(0, 1),
-                ),
+                )
               ],
             ),
             padding: const EdgeInsets.all(16),
@@ -147,10 +148,7 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: appt['statusColor'],
                         borderRadius: BorderRadius.circular(20),
@@ -173,11 +171,7 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
-                      Icons.local_hospital,
-                      size: 18,
-                      color: Colors.grey.shade600,
-                    ),
+                    Icon(Icons.local_hospital, size: 18, color: Colors.grey.shade600),
                     const SizedBox(width: 6),
                     Text(
                       appt['location'],
@@ -193,7 +187,7 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const AppointmentDetailScreen(),
+                          builder: (_) => AppointmentDetailScreen(appointment: appt),
                         ),
                       );
                     },
