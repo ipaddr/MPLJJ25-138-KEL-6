@@ -25,6 +25,30 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
       'icon': 'assets/images/img12.png',
       'question': 'Have you been coughing up blood?',
     },
+    {
+      'icon': 'assets/images/img10.png',
+      'question': 'Do you experience fever or chills frequently?',
+    },
+    {
+      'icon': 'assets/images/img11.png',
+      'question': 'Do you feel chest pain when breathing or coughing?',
+    },
+    {
+      'icon': 'assets/images/img12.png',
+      'question': 'Have you been in contact with someone diagnosed with TBC?',
+    },
+    {
+      'icon': 'assets/images/img10.png',
+      'question': 'Do you experience loss of appetite?',
+    },
+    {
+      'icon': 'assets/images/img11.png',
+      'question': 'Have you noticed swelling in your neck or lymph nodes?',
+    },
+    {
+      'icon': 'assets/images/img12.png',
+      'question': 'Have you traveled to areas with high TBC prevalence recently?',
+    },
   ];
 
   final Map<int, String> _answers = {};
@@ -45,32 +69,31 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
 
     showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text(
-              'Screening Completed',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            content: const Text(
-              'Thank you for completing the screening.',
+      builder: (_) => AlertDialog(
+        title: const Text(
+          'Screening Completed',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: const Text(
+          'Thank you for completing the screening.',
+          style: TextStyle(fontFamily: 'Poppins'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text(
+              'Close',
               style: TextStyle(fontFamily: 'Poppins'),
             ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  'Close',
-                  style: TextStyle(fontFamily: 'Poppins'),
-                ),
-              ),
-            ],
           ),
+        ],
+      ),
     );
   }
 
