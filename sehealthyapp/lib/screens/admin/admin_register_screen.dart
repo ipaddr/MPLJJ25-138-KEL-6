@@ -11,12 +11,14 @@ class AdminRegisterScreen extends StatefulWidget {
 }
 
 class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
-  final _formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+
+  final _formKey = GlobalKey<FormState>();
   bool agreeTerms = false;
+  bool _isLoading = false;
 
   final List<String> allowedEmails = [
     'abdulhafiz.contact@gmail.com',
@@ -24,61 +26,63 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   ];
 
   void _onRegister() async {
-    if (_formKey.currentState!.validate()) {
-      if (!agreeTerms) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Please agree to the Terms and Privacy Policy"),
-          ),
-        );
-        return;
-      }
+    if (!_formKey.currentState!.validate()) return;
 
-      final email = emailController.text.trim();
+    if (!agreeTerms) {
+      _showMessage("Please agree to the Terms and Privacy Policy");
+      return;
+    }
 
-      if (!allowedEmails.contains(email)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Email tidak diizinkan mendaftar")),
-        );
-        return;
-      }
+    final email = emailController.text.trim();
 
-      try {
-        final credential = await FirebaseAuth.instance
-            .createUserWithEmailAndPassword(
-              email: email,
-              password: passwordController.text.trim(),
-            );
+    if (!allowedEmails.contains(email)) {
+      _showMessage("Email tidak diizinkan mendaftar");
+      return;
+    }
 
-        await credential.user?.sendEmailVerification();
+    setState(() {
+      _isLoading = true;
+    });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Pendaftaran berhasil. Silakan verifikasi email kamu",
-            ),
-          ),
-        );
+    try {
+      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: passwordController.text.trim(),
+      );
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Pendaftaran gagal: ${e.toString()}")),
-        );
+      await credential.user?.sendEmailVerification();
+
+      _showMessage("Pendaftaran berhasil. Silakan verifikasi email kamu", isError: false);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+      );
+    } catch (e) {
+      _showMessage("Pendaftaran gagal: ${e.toString()}");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
 
-  @override
-  void dispose() {
-    nameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    super.dispose();
+  void _showMessage(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: isError ? Colors.redAccent : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   Widget buildTextField({
@@ -90,20 +94,13 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     return TextFormField(
       controller: controller,
       obscureText: obscure,
-      style: const TextStyle(fontSize: 14),
+      style: const TextStyle(fontSize: 12),
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
+        hintStyle: const TextStyle(fontSize: 12),
+        prefixIcon: Icon(icon, size: 18),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -115,8 +112,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         if (obscure && value.length < 6) {
           return 'Minimum 6 characters';
         }
-        if (controller == confirmPasswordController &&
-            value != passwordController.text) {
+        if (controller == confirmPasswordController && value != passwordController.text) {
           return 'Passwords do not match';
         }
         return null;
@@ -125,11 +121,20 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   }
 
   @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFD9E6FF),
+      backgroundColor: const Color(0xFFEFF6FF),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFD9E6FF),
+        backgroundColor: const Color(0xFFEFF6FF),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
@@ -141,152 +146,196 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
           },
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              const SizedBox(height: 30),
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2563EB),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                padding: const EdgeInsets.all(10),
-                child: Image.asset(
-                  'assets/images/logo1.png',
-                  width: 50,
-                  height: 50,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'SeHealthy',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Create Account',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Sign up to track your health journey',
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 30),
-
-              buildTextField(
-                controller: nameController,
-                hint: 'Enter your full name',
-                icon: Icons.person_outline,
-              ),
-              const SizedBox(height: 20),
-
-              buildTextField(
-                controller: emailController,
-                hint: 'Enter your email',
-                icon: Icons.email_outlined,
-              ),
-              const SizedBox(height: 20),
-
-              buildTextField(
-                controller: passwordController,
-                hint: 'Create password',
-                icon: Icons.lock_outline,
-                obscure: true,
-              ),
-              const SizedBox(height: 20),
-
-              buildTextField(
-                controller: confirmPasswordController,
-                hint: 'Confirm password',
-                icon: Icons.lock_outline,
-                obscure: true,
-              ),
-              const SizedBox(height: 20),
-
-              Row(
-                children: [
-                  Checkbox(
-                    value: agreeTerms,
-                    onChanged: (value) {
-                      setState(() {
-                        agreeTerms = value ?? false;
-                      });
-                    },
-                  ),
-                  Expanded(
-                    child: RichText(
-                      text: const TextSpan(
-                        style: TextStyle(color: Colors.black, fontSize: 14),
-                        children: [
-                          TextSpan(text: 'I agree to the '),
-                          TextSpan(
-                            text: 'Terms of Service',
-                            style: TextStyle(color: Color(0xFF2F60FF)),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: IntrinsicHeight(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 10),
+                        Center(
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF2563EB),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Image.asset(
+                                  'assets/images/logo1.png',
+                                  height: 36,
+                                  width: 36,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'SeHealthy',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Create Account',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Sign up to track your health journey',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ],
                           ),
-                          TextSpan(text: ' and '),
-                          TextSpan(
-                            text: 'Privacy Policy',
-                            style: TextStyle(color: Color(0xFF2F60FF)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: agreeTerms ? _onRegister : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2563EB),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: const Text(
-                    'Sign Up Admin',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Already have an account? '),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AdminLoginScreen(),
                         ),
-                      );
-                    },
-                    child: const Text(
-                      'Log In',
-                      style: TextStyle(
-                        color: Color(0xFF2F60FF),
-                        fontWeight: FontWeight.bold,
-                      ),
+                        const SizedBox(height: 20),
+                        buildLabel('Full Name'),
+                        buildTextField(
+                          controller: nameController,
+                          hint: 'Enter your full name',
+                          icon: Icons.person_outline,
+                        ),
+                        const SizedBox(height: 8),
+                        buildLabel('Email'),
+                        buildTextField(
+                          controller: emailController,
+                          hint: 'Enter your email',
+                          icon: Icons.email_outlined,
+                        ),
+                        const SizedBox(height: 8),
+                        buildLabel('Password'),
+                        buildTextField(
+                          controller: passwordController,
+                          hint: 'Enter your password',
+                          icon: Icons.lock_outline,
+                          obscure: true,
+                        ),
+                        const SizedBox(height: 8),
+                        buildLabel('Confirm Password'),
+                        buildTextField(
+                          controller: confirmPasswordController,
+                          hint: 'Re-enter your password',
+                          icon: Icons.lock_outline,
+                          obscure: true,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: agreeTerms,
+                              onChanged: (value) {
+                                setState(() {
+                                  agreeTerms = value ?? false;
+                                });
+                              },
+                            ),
+                            const Expanded(
+                              child: Text.rich(
+                                TextSpan(
+                                  text: 'I agree to the ',
+                                  style: TextStyle(fontSize: 11),
+                                  children: [
+                                    TextSpan(
+                                      text: 'Terms of Service',
+                                      style: TextStyle(
+                                        color: Color(0xFF2F60FF),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    TextSpan(text: ' and '),
+                                    TextSpan(
+                                      text: 'Privacy Policy',
+                                      style: TextStyle(
+                                        color: Color(0xFF2F60FF),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _onRegister,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 16,
+                                    width: 16,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Sign Up Admin',
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Center(
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+                              );
+                            },
+                            child: const Text.rich(
+                              TextSpan(
+                                text: 'Already have an account? ',
+                                children: [
+                                  TextSpan(
+                                    text: 'Log In',
+                                    style: TextStyle(
+                                      color: Color(0xFF2F60FF),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget buildLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
     );
   }
 }

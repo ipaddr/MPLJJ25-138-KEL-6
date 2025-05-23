@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'checkup_detail.dart';
+import 'dashboard_screen.dart'; // Import dashboard_screen.dart untuk navigasi
 
 class ScheduleScreen extends StatelessWidget {
   const ScheduleScreen({super.key});
@@ -11,7 +12,18 @@ class ScheduleScreen extends StatelessWidget {
         title: const Text('Schedule'),
         centerTitle: true,
         elevation: 0,
-        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // Navigasi langsung ke DashboardScreen saat back ditekan
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardScreen()),
+            );
+          },
+        ),
       ),
       backgroundColor: const Color(0xFFF5F7FA),
       body: SingleChildScrollView(
@@ -19,14 +31,11 @@ class ScheduleScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title: Upcoming Checkup
             const Text(
               'Upcoming Checkup',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-
-            // Upcoming Checkup Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -35,7 +44,6 @@ class ScheduleScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  // Icon
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: const BoxDecoration(
@@ -45,8 +53,6 @@ class ScheduleScreen extends StatelessWidget {
                     child: const Icon(Icons.bloodtype, color: Colors.blue),
                   ),
                   const SizedBox(width: 16),
-
-                  // Checkup Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,16 +72,11 @@ class ScheduleScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  // Label + arrow
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
@@ -96,10 +97,8 @@ class ScheduleScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Riwayat Checkup
             _buildCheckupCard(
-              context: context, // <-- kirim context di sini
+              context: context,
               title: 'Regular Checkup',
               date: 'Apr 15, 2025',
               data: {'Blood Pressure': '120/80 mmHg', 'Heart Rate': '72 bpm'},
@@ -122,7 +121,6 @@ class ScheduleScreen extends StatelessWidget {
     );
   }
 
-  // Tambahkan parameter BuildContext context
   Widget _buildCheckupCard({
     required BuildContext context,
     required String title,
@@ -140,7 +138,6 @@ class ScheduleScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title & Date
           Text(
             title,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -148,24 +145,19 @@ class ScheduleScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(date, style: const TextStyle(color: Colors.grey)),
           const SizedBox(height: 12),
-
-          // Data medis
           Wrap(
             spacing: 20,
             runSpacing: 4,
-            children:
-                data.entries
-                    .map(
-                      (e) => Text(
-                        '${e.key}: ${e.value}',
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    )
-                    .toList(),
+            children: data.entries
+                .map(
+                  (e) => Text(
+                    '${e.key}: ${e.value}',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                )
+                .toList(),
           ),
           const SizedBox(height: 12),
-
-          // View Details Button
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
