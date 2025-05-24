@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
-import 'schedule_screen.dart';
-import 'profile_screen.dart';
+import 'health_history/schedule_screen.dart';
+import 'profile_user/profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});

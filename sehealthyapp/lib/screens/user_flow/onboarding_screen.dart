@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
-import 'choose_role_screen.dart';
-import 'register_screen.dart';  // Import RegisterScreen
+import '../initial/choose_role_screen.dart';
+import 'register_screen.dart'; // Import RegisterScreen
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
@@ -17,9 +17,7 @@ class OnboardingScreen extends StatelessWidget {
           onPressed: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (_) => const ChooseRoleScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const ChooseRoleScreen()),
             );
           },
         ),

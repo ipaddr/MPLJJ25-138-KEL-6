@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-import 'schedule_screen.dart';
-import 'profile_screen.dart';
-import 'page_tbc_screening.dart';
-import 'page_health_checkup.dart';
-import 'page_resources.dart';
+import 'health_history/schedule_screen.dart';
+import 'profile_user/profile_screen.dart';
+import 'tbs_screening/page_tbc_screening.dart';
+import 'health_checkup/page_health_checkup.dart';
+import 'resources/page_resources.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});

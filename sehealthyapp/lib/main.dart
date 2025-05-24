@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'screens/first_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/register_screen.dart';
+import 'screens/initial/first_screen.dart';
+import 'screens/user_flow/login_screen.dart';
+import 'screens/user_flow/register_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/admin/admin_register_screen.dart';
-import 'screens/page_health_checkup.dart'; // <-- Tambahkan ini
+import 'screens/health_checkup/page_health_checkup.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

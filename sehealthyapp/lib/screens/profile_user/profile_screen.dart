@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'first_screen.dart';
+import '../initial/first_screen.dart';
 import 'profile_screen_edit.dart';
 
 class ProfileScreen extends StatefulWidget {

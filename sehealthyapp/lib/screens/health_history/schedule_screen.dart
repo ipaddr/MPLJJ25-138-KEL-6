@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'checkup_detail.dart';
-import 'dashboard_screen.dart'; // Import dashboard_screen.dart untuk navigasi
+import '../dashboard_screen.dart'; // Import dashboard_screen.dart untuk navigasi
 
 class ScheduleScreen extends StatelessWidget {
   const ScheduleScreen({super.key});
@@ -76,7 +76,10 @@ class ScheduleScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
@@ -148,14 +151,15 @@ class ScheduleScreen extends StatelessWidget {
           Wrap(
             spacing: 20,
             runSpacing: 4,
-            children: data.entries
-                .map(
-                  (e) => Text(
-                    '${e.key}: ${e.value}',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                )
-                .toList(),
+            children:
+                data.entries
+                    .map(
+                      (e) => Text(
+                        '${e.key}: ${e.value}',
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    )
+                    .toList(),
           ),
           const SizedBox(height: 12),
           SizedBox(

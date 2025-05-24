@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'onboarding_screen.dart';
-import 'admin/admin_onboarding.dart';
+import '../user_flow/onboarding_screen.dart';
+import '../admin/admin_onboarding.dart';
 
 class ChooseRoleScreen extends StatelessWidget {
   const ChooseRoleScreen({super.key});
