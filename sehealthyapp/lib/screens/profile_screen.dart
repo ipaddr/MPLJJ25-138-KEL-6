@@ -2,22 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'first_screen.dart';
-import 'profile_screen_edit.dart'; // Ganti dengan nama file yang sesuai
+import 'profile_screen_edit.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  Future<String> _getUserName() async {
+  /// Ambil data dari `users`, lalu simpan ke `biodata` jika belum ada.
+  Future<Map<String, dynamic>> _fetchAndSaveBiodata() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final doc =
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
-      return doc.data()?['fullName'] ?? 'User';
+    if (user == null) return {};
+
+    final uid = user.uid;
+
+    // Cek apakah biodata sudah ada
+    final biodataDoc =
+        await FirebaseFirestore.instance.collection('biodata').doc(uid).get();
+    if (!biodataDoc.exists) {
+      // Ambil data dari `users`
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final userData = userDoc.data() ?? {};
+
+      final fullName = user.displayName ?? 'User'; // Ambil dari akun user
+      final nik = userData['nik'] ?? '-';
+      final bloodType = userData['bloodType'] ?? '-';
+
+      // Simpan ke koleksi `biodata`
+      await FirebaseFirestore.instance.collection('biodata').doc(uid).set({
+        'nik': nik,
+        'bloodType': bloodType,
+        'fullName': fullName,
+      });
     }
-    return 'Guest';
+
+    // Ambil dan kembalikan data dari koleksi biodata
+    final newBiodata =
+        await FirebaseFirestore.instance.collection('biodata').doc(uid).get();
+    return newBiodata.data() ?? {};
   }
 
   @override
@@ -33,112 +54,115 @@ class ProfileScreen extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            FutureBuilder<String>(
-              future: _getUserName(),
-              builder: (context, snapshot) {
-                String name = '...';
-                if (snapshot.connectionState == ConnectionState.done) {
-                  name = snapshot.data ?? 'User';
-                }
-                return Column(
-                  children: [
-                    // Ganti dengan icon profile jika mau
-                    CircleAvatar(
-                      radius: 35,
-                      backgroundColor: Colors.blueAccent,
-                      child: Icon(Icons.person, size: 40, color: Colors.white),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+        child: FutureBuilder<Map<String, dynamic>>(
+          future: _fetchAndSaveBiodata(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final data = snapshot.data ?? {};
+            final name =
+                FirebaseAuth.instance.currentUser?.displayName ?? 'User';
+            final nik = data['nik'] ?? '-';
+            final bloodType = data['bloodType'] ?? '-';
+
+            return Column(
+              children: [
+                const CircleAvatar(
+                  radius: 35,
+                  backgroundColor: Colors.blueAccent,
+                  child: Icon(Icons.person, size: 40, color: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Text(
+                  'Patient ID: #12345',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 30),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Personal Information',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                infoRow('NIK', nik),
+                infoRow('Blood Type', bloodType),
+                const SizedBox(height: 30),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Settings',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                settingTile(Icons.notifications, 'Notification Preferences'),
+                settingTile(Icons.language, 'Language'),
+                settingTile(Icons.lock, 'Privacy Settings'),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditProfilePage(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Edit Profile'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    const Text(
-                      'Patient ID: #12345',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 30),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Personal Information',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 10),
-            infoRow('NIK', '3275064509890001'),
-            infoRow('Blood Type', 'A+'),
-            const SizedBox(height: 30),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Settings',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 10),
-            settingTile(Icons.notifications, 'Notification Preferences'),
-            settingTile(Icons.language, 'Language'),
-            settingTile(Icons.lock, 'Privacy Settings'),
-            const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => EditProfilePage()),
-                  );
-                },
-
-                icon: const Icon(Icons.edit),
-                label: const Text('Edit Profile'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FirstScreen(),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      FirebaseAuth.instance.signOut();
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FirstScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.logout),
+                    label: const Text('Log Out'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                  );
-                },
-                icon: const Icon(Icons.logout),
-                label: const Text('Log Out'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget infoRow(String title, String value) {
+  static Widget infoRow(String title, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -152,7 +176,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget settingTile(IconData icon, String title) {
+  static Widget settingTile(IconData icon, String title) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: Colors.blue),
