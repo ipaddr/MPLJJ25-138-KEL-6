@@ -6,6 +6,7 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/admin/admin_register_screen.dart';
+import 'screens/page_health_checkup.dart'; // <-- Tambahkan ini
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,8 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/dashboard': (context) => const DashboardScreen(),
         '/admin_register': (context) => const AdminRegisterScreen(),
+        '/health_checkup':
+            (context) => const PageHealthCheckup(), // <-- Route baru
       },
     );
   }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'checkup_confirmation.dart';
 
 class PageHealthCheckup extends StatefulWidget {
   const PageHealthCheckup({super.key});
@@ -38,6 +40,39 @@ class _PageHealthCheckupState extends State<PageHealthCheckup> {
     }
   }
 
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate() &&
+        _selectedCheckupType != null &&
+        _selectedFacility != null) {
+      // Simpan data ke Firestore
+      await FirebaseFirestore.instance.collection('checkups').add({
+        'fullName': _fullNameController.text,
+        'id': _idController.text,
+        'dob': _dobController.text,
+        'checkupType': _selectedCheckupType,
+        'facility': _selectedFacility,
+        'date': _preferredDateController.text,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      // Navigasi ke halaman konfirmasi
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => CheckupConfirmationPage(
+                fullName: _fullNameController.text,
+                id: _idController.text,
+                dob: _dobController.text,
+                checkupType: _selectedCheckupType!,
+                facility: _selectedFacility!,
+                date: _preferredDateController.text,
+              ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,171 +93,33 @@ class _PageHealthCheckupState extends State<PageHealthCheckup> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Full Name',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _fullNameController,
-                style: const TextStyle(fontSize: 12),
-                decoration: InputDecoration(
-                  hintText: 'Enter your full name',
-                  hintStyle: const TextStyle(fontSize: 12),
-                  prefixIcon: const Icon(Icons.person, size: 18),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              const Text(
-                'National ID',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _idController,
-                style: const TextStyle(fontSize: 12),
-                decoration: InputDecoration(
-                  hintText: 'Enter your ID',
-                  hintStyle: const TextStyle(fontSize: 12),
-                  prefixIcon: const Icon(Icons.credit_card, size: 18),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              const Text(
-                'Date of Birth',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _dobController,
-                readOnly: true,
-                onTap: () => _selectDate(_dobController),
-                style: const TextStyle(fontSize: 12),
-                decoration: InputDecoration(
-                  hintText: 'mm/dd/yyyy',
-                  hintStyle: const TextStyle(fontSize: 12),
-                  prefixIcon: const Icon(Icons.calendar_today, size: 18),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              const Text(
+              buildTextField('Full Name', _fullNameController, Icons.person),
+              buildTextField('National ID', _idController, Icons.credit_card),
+              buildDateField('Date of Birth', _dobController, Icons.cake),
+              buildDropdownField(
                 'Checkup Type',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                checkupTypes,
+                _selectedCheckupType,
+                Icons.medical_services,
+                (val) => setState(() => _selectedCheckupType = val),
               ),
-              const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                value: _selectedCheckupType,
-                items:
-                    checkupTypes
-                        .map(
-                          (type) =>
-                              DropdownMenuItem(value: type, child: Text(type)),
-                        )
-                        .toList(),
-                onChanged:
-                    (value) => setState(() => _selectedCheckupType = value),
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.local_hospital, size: 18),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                style: const TextStyle(fontSize: 12, color: Colors.black),
-              ),
-              const SizedBox(height: 12),
-
-              const Text(
+              buildDropdownField(
                 'Health Facility',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                facilities,
+                _selectedFacility,
+                Icons.local_hospital,
+                (val) => setState(() => _selectedFacility = val),
               ),
-              const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                value: _selectedFacility,
-                items:
-                    facilities
-                        .map(
-                          (facility) => DropdownMenuItem(
-                            value: facility,
-                            child: Text(facility),
-                          ),
-                        )
-                        .toList(),
-                onChanged: (value) => setState(() => _selectedFacility = value),
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.location_city, size: 18),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                style: const TextStyle(fontSize: 12, color: Colors.black),
-              ),
-              const SizedBox(height: 12),
-
-              const Text(
+              buildDateField(
                 'Preferred Checkup Date',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _preferredDateController,
-                readOnly: true,
-                onTap: () => _selectDate(_preferredDateController),
-                style: const TextStyle(fontSize: 12),
-                decoration: InputDecoration(
-                  hintText: 'mm/dd/yyyy',
-                  hintStyle: const TextStyle(fontSize: 12),
-                  prefixIcon: const Icon(Icons.event, size: 18),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
+                _preferredDateController,
+                Icons.event,
               ),
               const SizedBox(height: 20),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // handle registration
-                    }
-                  },
+                  onPressed: _submitForm,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2563EB),
                     foregroundColor: Colors.white,
@@ -238,7 +135,6 @@ class _PageHealthCheckupState extends State<PageHealthCheckup> {
                 ),
               ),
               const SizedBox(height: 12),
-
               const Text(
                 'By registering, you agree to our Terms of Service and Privacy Policy',
                 textAlign: TextAlign.center,
@@ -248,6 +144,112 @@ class _PageHealthCheckupState extends State<PageHealthCheckup> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget buildTextField(
+    String label,
+    TextEditingController controller,
+    IconData icon,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+          style: const TextStyle(fontSize: 12),
+          decoration: InputDecoration(
+            hintText: 'Enter your $label',
+            prefixIcon: Icon(icon, size: 18),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 8,
+            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget buildDateField(
+    String label,
+    TextEditingController controller,
+    IconData icon,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          readOnly: true,
+          onTap: () => _selectDate(controller),
+          validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+          style: const TextStyle(fontSize: 12),
+          decoration: InputDecoration(
+            hintText: 'mm/dd/yyyy',
+            prefixIcon: Icon(icon, size: 18),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 8,
+            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget buildDropdownField(
+    String label,
+    List<String> items,
+    String? selected,
+    IconData icon,
+    void Function(String?) onChanged,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: selected,
+          onChanged: onChanged,
+          items:
+              items
+                  .map(
+                    (item) => DropdownMenuItem(value: item, child: Text(item)),
+                  )
+                  .toList(),
+          validator: (val) => val == null ? 'Please select $label' : null,
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, size: 18),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 8,
+            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          style: const TextStyle(fontSize: 12, color: Colors.black),
+        ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 }

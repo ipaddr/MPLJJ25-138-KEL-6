@@ -4,45 +4,62 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'first_screen.dart';
 import 'profile_screen_edit.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
-  /// Ambil data dari `users`, lalu simpan ke `biodata` jika belum ada.
-  Future<Map<String, dynamic>> _fetchAndSaveBiodata() async {
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String? _photoUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  Future<void> _loadProfileData() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return {};
+    if (user == null) return;
 
     final uid = user.uid;
 
-    // Cek apakah biodata sudah ada
     final biodataDoc =
         await FirebaseFirestore.instance.collection('biodata').doc(uid).get();
     if (!biodataDoc.exists) {
-      // Ambil data dari `users`
       final userDoc =
           await FirebaseFirestore.instance.collection('users').doc(uid).get();
       final userData = userDoc.data() ?? {};
 
-      final fullName = user.displayName ?? 'User'; // Ambil dari akun user
+      final fullName = user.displayName ?? 'User';
       final nik = userData['nik'] ?? '-';
       final bloodType = userData['bloodType'] ?? '-';
+      final photoUrl = userData['photoUrl'] ?? '';
 
-      // Simpan ke koleksi `biodata`
       await FirebaseFirestore.instance.collection('biodata').doc(uid).set({
         'nik': nik,
         'bloodType': bloodType,
         'fullName': fullName,
+        'photoUrl': photoUrl,
+      });
+
+      setState(() {
+        _photoUrl = photoUrl;
+      });
+    } else {
+      final data = biodataDoc.data();
+      setState(() {
+        _photoUrl = data?['photoUrl'];
       });
     }
-
-    // Ambil dan kembalikan data dari koleksi biodata
-    final newBiodata =
-        await FirebaseFirestore.instance.collection('biodata').doc(uid).get();
-    return newBiodata.data() ?? {};
   }
 
   @override
   Widget build(BuildContext context) {
+    final name = FirebaseAuth.instance.currentUser?.displayName ?? 'User';
+
     return Scaffold(
       backgroundColor: const Color(0xFFE6F0FF),
       appBar: AppBar(
@@ -52,27 +69,41 @@ class ProfileScreen extends StatelessWidget {
         title: const Text('Profile', style: TextStyle(color: Colors.black)),
         automaticallyImplyLeading: false,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: FutureBuilder<Map<String, dynamic>>(
-          future: _fetchAndSaveBiodata(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
+      body: FutureBuilder<DocumentSnapshot>(
+        future:
+            FirebaseFirestore.instance
+                .collection('biodata')
+                .doc(FirebaseAuth.instance.currentUser!.uid)
+                .get(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            final data = snapshot.data ?? {};
-            final name =
-                FirebaseAuth.instance.currentUser?.displayName ?? 'User';
-            final nik = data['nik'] ?? '-';
-            final bloodType = data['bloodType'] ?? '-';
+          final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+          final nik = data['nik'] ?? '-';
+          final bloodType = data['bloodType'] ?? '';
 
-            return Column(
+          // Pakai _photoUrl yang sudah di-set di state
+          final photoUrl = _photoUrl ?? '';
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 35,
                   backgroundColor: Colors.blueAccent,
-                  child: Icon(Icons.person, size: 40, color: Colors.white),
+                  backgroundImage:
+                      photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                  child:
+                      photoUrl.isEmpty
+                          ? const Icon(
+                            Icons.person,
+                            size: 40,
+                            color: Colors.white,
+                          )
+                          : null,
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -155,9 +186,9 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
               ],
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
