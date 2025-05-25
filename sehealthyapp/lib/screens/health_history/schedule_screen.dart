@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'checkup_detail.dart';
 import '../dashboard_screen.dart';
+import '../health_history/add_health_history.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -59,7 +60,22 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             );
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Add Health History',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddHealthHistoryScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
+
       backgroundColor: const Color(0xFFF5F7FA),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
