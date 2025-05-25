@@ -1,9 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'checkup_detail.dart';
-import '../dashboard_screen.dart'; // Import dashboard_screen.dart untuk navigasi
+import '../dashboard_screen.dart';
 
-class ScheduleScreen extends StatelessWidget {
+class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
+
+  @override
+  State<ScheduleScreen> createState() => _ScheduleScreenState();
+}
+
+class _ScheduleScreenState extends State<ScheduleScreen> {
+  Map<String, dynamic>? upcomingCheckup;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUpcomingCheckup();
+  }
+
+  Future<void> fetchUpcomingCheckup() async {
+    try {
+      final now = Timestamp.now();
+      final query =
+          await FirebaseFirestore.instance
+              .collection('checkups')
+              .where('date', isGreaterThanOrEqualTo: now)
+              .orderBy('date')
+              .limit(1)
+              .get();
+
+      if (query.docs.isNotEmpty) {
+        setState(() {
+          upcomingCheckup = query.docs.first.data();
+        });
+      }
+    } catch (e) {
+      print('Error fetching upcoming checkup: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +53,6 @@ class ScheduleScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            // Navigasi langsung ke DashboardScreen saat back ditekan
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (_) => const DashboardScreen()),
@@ -36,90 +71,86 @@ class ScheduleScreen extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFDDEEFF),
-                borderRadius: BorderRadius.circular(12),
+            if (upcomingCheckup != null)
+              _buildUpcomingCheckupCard(upcomingCheckup!)
+            else
+              const Text(
+                'No upcoming checkups',
+                style: TextStyle(color: Colors.grey),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.bloodtype, color: Colors.blue),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Blood Pressure',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Apr 15, 2025',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Tomorrow',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Icon(Icons.arrow_forward_ios, size: 16),
-                    ],
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 24),
+            // Checkup Card manual (boleh disesuaikan lebih lanjut)
             _buildCheckupCard(
               context: context,
               title: 'Regular Checkup',
               date: 'Apr 15, 2025',
               data: {'Blood Pressure': '120/80 mmHg', 'Heart Rate': '72 bpm'},
             ),
-            _buildCheckupCard(
-              context: context,
-              title: 'Blood Work',
-              date: 'Apr 10, 2025',
-              data: {'Glucose': '110 mg/dL', 'Cholesterol': '185 mg/dL'},
-            ),
-            _buildCheckupCard(
-              context: context,
-              title: 'Blood Pressure Check',
-              date: 'Apr 5, 2025',
-              data: {'Blood Pressure': '118/78 mmHg', 'Heart Rate': '68 bpm'},
-            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildUpcomingCheckupCard(Map<String, dynamic> checkupData) {
+    final title = checkupData['checkupType'] ?? 'Checkup';
+    final timestamp = checkupData['date'] as Timestamp;
+    final dateFormatted = DateFormat('MMM d, yyyy').format(timestamp.toDate());
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFDDEEFF),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Image.asset(
+                'assets/images/img5.png',
+                width: 20,
+                height: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(dateFormatted, style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: const [
+              Text(
+                'Soon',
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 8),
+              Icon(Icons.arrow_forward_ios, size: 16),
+            ],
+          ),
+        ],
       ),
     );
   }

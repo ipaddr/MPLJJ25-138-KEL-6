@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import 'health_history/schedule_screen.dart';
 import 'profile_user/profile_screen.dart';
 import 'tbs_screening/page_tbc_screening.dart';
@@ -61,11 +62,13 @@ class DashboardContent extends StatefulWidget {
 
 class _DashboardContentState extends State<DashboardContent> {
   String fullname = 'Loading...';
+  Map<String, dynamic>? upcomingCheckup;
 
   @override
   void initState() {
     super.initState();
     fetchUserFullname();
+    fetchUpcomingCheckup();
   }
 
   Future<void> fetchUserFullname() async {
@@ -89,6 +92,37 @@ class _DashboardContentState extends State<DashboardContent> {
     }
   }
 
+  Future<void> fetchUpcomingCheckup() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final now = Timestamp.now();
+        final query =
+            await FirebaseFirestore.instance
+                .collection('checkups')
+                .where('date', isGreaterThanOrEqualTo: now)
+                .orderBy('date')
+                .limit(1)
+                .get();
+
+        if (query.docs.isNotEmpty) {
+          setState(() {
+            upcomingCheckup = query.docs.first.data();
+          });
+        } else {
+          setState(() {
+            upcomingCheckup = null;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error fetching checkup: $e');
+      setState(() {
+        upcomingCheckup = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -100,11 +134,14 @@ class _DashboardContentState extends State<DashboardContent> {
             children: [
               Row(
                 children: [
-                  // Ganti dengan icon profile jika mau
                   CircleAvatar(
                     radius: 22,
                     backgroundColor: Colors.blueAccent,
-                    child: Icon(Icons.person, size: 40, color: Colors.white),
+                    child: const Icon(
+                      Icons.person,
+                      size: 40,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -176,48 +213,80 @@ class _DashboardContentState extends State<DashboardContent> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFFF5FAFF),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   children: [
-                    const CircleAvatar(
-                      backgroundColor: Color(0xFFDBEAFE),
-                      child: Icon(Icons.monitor_heart, color: Colors.blue),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Blood Pressure',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          'Apr 15, 2025',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Color(0xFFDBEAFE),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text(
-                        'Tomorrow',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.blueAccent,
+                      child: Center(
+                        child: Image.asset(
+                          'assets/images/img5.png',
+                          width: 20,
+                          height: 20,
                         ),
                       ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            upcomingCheckup?['checkupType'] ?? '-',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            upcomingCheckup?['date'] != null
+                                ? DateFormat('MMMM d, y').format(
+                                  (upcomingCheckup!['date'] as Timestamp)
+                                      .toDate(),
+                                )
+                                : '-',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD1E9FF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'Soon',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF1A73E8),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -230,132 +299,235 @@ class _DashboardContentState extends State<DashboardContent> {
   }
 }
 
-class _MenuCard extends StatelessWidget {
-  final Color color;
-  final String imagePath;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _MenuCard({
-    required this.color,
-    required this.imagePath,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
+class CardHealthCheckup extends StatelessWidget {
+  const CardHealthCheckup({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.asset(imagePath, width: 32, height: 32),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: const TextStyle(fontSize: 11, color: Colors.black87),
-            ),
-          ],
+    return Card(
+      color: const Color(0xFFADD2FF), // warna latar belakang biru muda
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PageHealthCheckup()),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Icon dalam lingkaran
+              Container(
+                width: 48,
+                height: 41,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE6F0FB), // abu muda
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/img5.png',
+                    width: 20,
+                    height: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Health Checkup',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Schedule your next visit',
+                style: TextStyle(fontSize: 11, color: Colors.black54),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// Card: Health Checkup
-class CardHealthCheckup extends StatelessWidget {
-  const CardHealthCheckup({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _MenuCard(
-      color: const Color(0xFFDBEAFE),
-      imagePath: 'assets/images/img5.png',
-      title: 'Health Checkup',
-      subtitle: 'Schedule your next visit',
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const PageHealthCheckup()),
-        );
-      },
-    );
-  }
-}
-
-// Card: TBC Screening
 class CardTBCScreening extends StatelessWidget {
   const CardTBCScreening({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return _MenuCard(
-      color: const Color(0xFFD1FAE5),
-      imagePath: 'assets/images/img6.png',
-      title: 'TBC Screening',
-      subtitle: 'Book screening test',
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const PageTBCScreening()),
-        );
-      },
+    return Card(
+      color: const Color(0xFFC8E6C9), // Hijau muda
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PageTBCScreening()),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 41,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE8F5E9), // hijau lebih muda
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/img6.png',
+                    width: 24,
+                    height: 24,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'TBC Screening',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Book screening test',
+                style: TextStyle(fontSize: 11, color: Colors.black54),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
-// Card: Health History
 class CardHealthHistory extends StatelessWidget {
   const CardHealthHistory({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return _MenuCard(
-      color: const Color(0xFFEDE9FE),
-      imagePath: 'assets/images/img7.png',
-      title: 'Health History',
-      subtitle: 'View your records',
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ScheduleScreen()),
-        );
-      },
+    return Card(
+      color: const Color(0xFFE1BEE7), // Ungu muda
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ScheduleScreen()),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 41,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF3E5F5), // ungu lebih muda
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/img7.png',
+                    width: 24,
+                    height: 24,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Health History',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'View your records',
+                style: TextStyle(fontSize: 11, color: Colors.black54),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
-// Card: Resources
 class CardResources extends StatelessWidget {
   const CardResources({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return _MenuCard(
-      color: const Color(0xFFFEF9C3),
-      imagePath: 'assets/images/img8.png',
-      title: 'Resources',
-      subtitle: 'Learn about health',
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const PageResources()),
-        );
-      },
+    return Card(
+      color: const Color(0xFFFFF9C4), // Kuning muda
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PageResources()),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 41,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFFDE7), // kuning lebih pucat
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Image.asset(
+                    'assets/images/img8.png',
+                    width: 20,
+                    height: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Resources',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Learn about health',
+                style: TextStyle(fontSize: 11, color: Colors.black54),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

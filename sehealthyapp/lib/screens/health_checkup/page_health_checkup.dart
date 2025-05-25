@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'checkup_confirmation.dart';
+import 'package:intl/intl.dart';
 
 class PageHealthCheckup extends StatefulWidget {
   const PageHealthCheckup({super.key});
@@ -20,15 +21,20 @@ class _PageHealthCheckupState extends State<PageHealthCheckup> {
 
   String? _selectedCheckupType;
   String? _selectedFacility;
+  DateTime? _selectedDate;
 
   final List<String> checkupTypes = [
     'Blood Pressure',
     'Sugar Test',
     'TBC Screening',
   ];
+
   final List<String> facilities = ['Health Center A', 'Clinic B', 'Hospital C'];
 
-  Future<void> _selectDate(TextEditingController controller) async {
+  Future<void> _selectDate(
+    TextEditingController controller, {
+    bool isPreferred = false,
+  }) async {
     DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -36,26 +42,28 @@ class _PageHealthCheckupState extends State<PageHealthCheckup> {
       lastDate: DateTime(2101),
     );
     if (picked != null) {
-      controller.text = "${picked.month}/${picked.day}/${picked.year}";
+      controller.text = DateFormat('MM/dd/yyyy').format(picked);
+      if (isPreferred) {
+        _selectedDate = picked;
+      }
     }
   }
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate() &&
         _selectedCheckupType != null &&
-        _selectedFacility != null) {
-      // Simpan data ke Firestore
+        _selectedFacility != null &&
+        _selectedDate != null) {
       await FirebaseFirestore.instance.collection('checkups').add({
         'fullName': _fullNameController.text,
         'id': _idController.text,
         'dob': _dobController.text,
         'checkupType': _selectedCheckupType,
         'facility': _selectedFacility,
-        'date': _preferredDateController.text,
+        'date': Timestamp.fromDate(_selectedDate!),
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // Navigasi ke halaman konfirmasi
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -66,7 +74,7 @@ class _PageHealthCheckupState extends State<PageHealthCheckup> {
                 dob: _dobController.text,
                 checkupType: _selectedCheckupType!,
                 facility: _selectedFacility!,
-                date: _preferredDateController.text,
+                date: _selectedDate!,
               ),
         ),
       );
@@ -95,7 +103,12 @@ class _PageHealthCheckupState extends State<PageHealthCheckup> {
             children: [
               buildTextField('Full Name', _fullNameController, Icons.person),
               buildTextField('National ID', _idController, Icons.credit_card),
-              buildDateField('Date of Birth', _dobController, Icons.cake),
+              buildDateField(
+                'Date of Birth',
+                _dobController,
+                Icons.cake,
+                false,
+              ),
               buildDropdownField(
                 'Checkup Type',
                 checkupTypes,
@@ -114,6 +127,7 @@ class _PageHealthCheckupState extends State<PageHealthCheckup> {
                 'Preferred Checkup Date',
                 _preferredDateController,
                 Icons.event,
+                true,
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -183,6 +197,7 @@ class _PageHealthCheckupState extends State<PageHealthCheckup> {
     String label,
     TextEditingController controller,
     IconData icon,
+    bool isPreferred,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,7 +210,7 @@ class _PageHealthCheckupState extends State<PageHealthCheckup> {
         TextFormField(
           controller: controller,
           readOnly: true,
-          onTap: () => _selectDate(controller),
+          onTap: () => _selectDate(controller, isPreferred: isPreferred),
           validator: (val) => val == null || val.isEmpty ? 'Required' : null,
           style: const TextStyle(fontSize: 12),
           decoration: InputDecoration(

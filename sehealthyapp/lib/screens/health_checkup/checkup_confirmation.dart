@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class CheckupConfirmationPage extends StatelessWidget {
   final String fullName;
@@ -6,7 +7,7 @@ class CheckupConfirmationPage extends StatelessWidget {
   final String dob;
   final String checkupType;
   final String facility;
-  final String date;
+  final DateTime date;
 
   const CheckupConfirmationPage({
     super.key,
@@ -75,9 +76,9 @@ class CheckupConfirmationPage extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           'Booking ID: #HC25498',
-                          style: TextStyle(color: Colors.blue),
+                          style: const TextStyle(color: Colors.blue),
                         ),
                         const SizedBox(height: 16),
                         infoRow(Icons.person_outline, 'Patient Name', fullName),
@@ -93,7 +94,11 @@ class CheckupConfirmationPage extends StatelessWidget {
                           'Health Facility',
                           facility,
                         ),
-                        infoRow(Icons.calendar_today_outlined, 'Date', date),
+                        infoRow(
+                          Icons.calendar_today_outlined,
+                          'Date',
+                          DateFormat('d MMMM y').format(date),
+                        ),
                       ],
                     ),
                   ),
