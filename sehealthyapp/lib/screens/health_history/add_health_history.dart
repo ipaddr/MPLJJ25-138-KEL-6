@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Tambahkan ini
 
 class AddHealthHistoryScreen extends StatefulWidget {
   const AddHealthHistoryScreen({super.key});
@@ -17,7 +18,6 @@ class _AddHealthHistoryScreenState extends State<AddHealthHistoryScreen> {
   final TextEditingController hospitalNameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
 
-  // Dropdown list untuk jenis pemeriksaan kesehatan
   final List<String> healthCheckupTypes = [
     'Blood Pressure',
     'Blood Sugar',
@@ -54,7 +54,6 @@ class _AddHealthHistoryScreenState extends State<AddHealthHistoryScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Vital Sign Inputs
               Wrap(
                 spacing: 16,
                 runSpacing: 16,
@@ -94,8 +93,6 @@ class _AddHealthHistoryScreenState extends State<AddHealthHistoryScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-
-              // Dropdown Jenis Pemeriksaan Kesehatan
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -162,7 +159,6 @@ class _AddHealthHistoryScreenState extends State<AddHealthHistoryScreen> {
                       isExpanded: true,
                     ),
                     const SizedBox(height: 16),
-
                     const Text('Glucose', style: TextStyle(fontSize: 14)),
                     const SizedBox(height: 8),
                     Row(
@@ -198,8 +194,6 @@ class _AddHealthHistoryScreenState extends State<AddHealthHistoryScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Doctor Info Inputs
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -267,8 +261,6 @@ class _AddHealthHistoryScreenState extends State<AddHealthHistoryScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Buttons
               Row(
                 children: [
                   Expanded(
@@ -285,10 +277,36 @@ class _AddHealthHistoryScreenState extends State<AddHealthHistoryScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(const SnackBar(content: Text('Saved')));
+                      onPressed: () async {
+                        try {
+                          await FirebaseFirestore.instance
+                              .collection('health_history')
+                              .add({
+                                'heartRate': heartRateController.text,
+                                'bloodPressure': bloodPressureController.text,
+                                'temperature': temperatureController.text,
+                                'oxygen': oxygenController.text,
+                                'checkupType': selectedCheckupType,
+                                'glucose': glucoseController.text,
+                                'doctorName': doctorNameController.text,
+                                'hospitalName': hospitalNameController.text,
+                                'description': descriptionController.text,
+                                'createdAt': Timestamp.now(),
+                              });
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Health history saved successfully',
+                              ),
+                            ),
+                          );
+                          Navigator.pop(context);
+                        } catch (e) {
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,

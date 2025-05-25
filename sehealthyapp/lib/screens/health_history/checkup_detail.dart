@@ -1,19 +1,59 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'checkup_detail_edit.dart';
+import '../health_history/checkup_detail_edit.dart';
 
-class CheckupDetailScreen extends StatelessWidget {
-  const CheckupDetailScreen({super.key});
+class CheckupDetailScreen extends StatefulWidget {
+  final String documentId;
 
-  final String testTitle =
-      'Blood Test Results'; // Bisa diganti sesuai pilihan user
-  final String testLabel = 'Glucose'; // Label (misal: Glucose, Cholesterol)
-  final String testValue = '105 mg/dL'; // Nilai hasil
+  const CheckupDetailScreen({super.key, required this.documentId});
 
-  void _onEditPressed(BuildContext context) {
-    Navigator.push(
+  @override
+  State<CheckupDetailScreen> createState() => _CheckupDetailScreenState();
+}
+
+class _CheckupDetailScreenState extends State<CheckupDetailScreen> {
+  late Future<DocumentSnapshot> _checkupFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCheckup();
+  }
+
+  void _loadCheckup() {
+    _checkupFuture =
+        FirebaseFirestore.instance
+            .collection('health_history')
+            .doc(widget.documentId)
+            .get();
+  }
+
+  void _onEditPressed(BuildContext context, Map<String, dynamic> data) async {
+    final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const EditCheckupDetailScreen()),
+      MaterialPageRoute(
+        builder:
+            (context) => EditCheckupDetailScreen(
+              documentId: widget.documentId,
+              initialData: data,
+            ),
+      ),
     );
+
+    if (result != null) {
+      await FirebaseFirestore.instance
+          .collection('health_history')
+          .doc(result['documentId'])
+          .update(result);
+
+      setState(() {
+        _loadCheckup();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Checkup updated successfully!')),
+      );
+    }
   }
 
   void _onDeletePressed(BuildContext context) {
@@ -29,8 +69,13 @@ class CheckupDetailScreen extends StatelessWidget {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
+                onPressed: () async {
+                  await FirebaseFirestore.instance
+                      .collection('health_history')
+                      .doc(widget.documentId)
+                      .delete();
+                  Navigator.pop(context); // tutup dialog
+                  Navigator.pop(context); // kembali ke halaman sebelumnya
                   ScaffoldMessenger.of(
                     context,
                   ).showSnackBar(const SnackBar(content: Text('Deleted')));
@@ -90,158 +135,172 @@ class CheckupDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Details"), leading: const BackButton()),
+      appBar: AppBar(title: const Text("Health Detail")),
       backgroundColor: const Color(0xFFE9F3FF),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Vital Signs
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                _buildVitalCard(
-                  "Heart Rate",
-                  "72 bpm",
-                  Icons.favorite,
-                  Colors.red,
-                ),
-                _buildVitalCard(
-                  "Blood Pressure",
-                  "120/80",
-                  Icons.water_drop,
-                  Colors.blue,
-                ),
-                _buildVitalCard(
-                  "Temperature",
-                  "98.6°F",
-                  Icons.thermostat,
-                  Colors.orange,
-                ),
-                _buildVitalCard(
-                  "Oxygen",
-                  "98%",
-                  Icons.bubble_chart,
-                  Colors.purple,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+      body: FutureBuilder<DocumentSnapshot>(
+        future: _checkupFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text('No data found'));
+          }
 
-            // Blood Test Results (dynamic title & value)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    testTitle,
-                    style: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w500,
+          var data = snapshot.data!.data() as Map<String, dynamic>;
+          String heartRate = data['heartRate'] ?? 'N/A';
+          String bloodPressure = data['bloodPressure'] ?? 'N/A';
+          String temperature = data['temperature'] ?? 'N/A';
+          String oxygen = data['oxygen'] ?? 'N/A';
+          String glucose = data['glucose'] ?? 'N/A';
+          String doctorName = data['doctorName'] ?? 'Unknown';
+          String hospitalName = data['hospitalName'] ?? 'Unknown';
+          String description = data['description'] ?? '-';
+          String checkupType = data['checkupType'] ?? 'Blood Test';
+
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    _buildVitalCard(
+                      "Heart Rate",
+                      "$heartRate bpm",
+                      Icons.favorite,
+                      Colors.red,
                     ),
+                    _buildVitalCard(
+                      "Blood Pressure",
+                      bloodPressure,
+                      Icons.water_drop,
+                      Colors.blue,
+                    ),
+                    _buildVitalCard(
+                      "Temperature",
+                      "$temperature °C",
+                      Icons.thermostat,
+                      Colors.orange,
+                    ),
+                    _buildVitalCard(
+                      "Oxygen",
+                      "$oxygen%",
+                      Icons.bubble_chart,
+                      Colors.purple,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Glukosa
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(testLabel, style: const TextStyle(fontSize: 16)),
                       Text(
-                        testValue,
+                        "$checkupType Results",
                         style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Doctor Info
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.grey,
-                        child: Icon(Icons.person, color: Colors.white),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Glucose', style: TextStyle(fontSize: 16)),
                           Text(
-                            'Dr. Abdul Hafiz',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                            "$glucose mg/dL",
+                            style: const TextStyle(
                               fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
                             ),
-                          ),
-                          Text(
-                            'Rumah Sakit Umum',
-                            style: TextStyle(color: Colors.grey),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'All vital signs and blood test results are within normal range. '
-                    'Slight elevation in glucose levels, but not concerning. '
-                    'Recommend regular exercise and balanced diet. Follow-up in 6 months.',
-                    style: TextStyle(fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                // Dokter dan Rumah Sakit
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
-              ),
-            ),
-            const Spacer(),
-
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _onDeletePressed(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                    child: const Text('Delete'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.grey,
+                            child: Icon(Icons.person, color: Colors.white),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Dr. $doctorName',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              Text(
+                                hospitalName,
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(description, style: const TextStyle(fontSize: 13)),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _onEditPressed(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                const Spacer(),
+                // Tombol Delete dan Edit
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _onDeletePressed(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        child: const Text('Delete'),
+                      ),
                     ),
-                    child: const Text('Edit'),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _onEditPressed(context, data),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                        ),
+                        child: const Text('Edit'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
