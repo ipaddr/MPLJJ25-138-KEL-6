@@ -2,14 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 
-class EducationEditPage extends StatefulWidget {
-  const EducationEditPage({super.key});
+class EducationAddPage extends StatefulWidget {
+  const EducationAddPage({super.key});
 
   @override
-  State<EducationEditPage> createState() => _EducationEditPageState();
+  State<EducationAddPage> createState() => _EducationAddPageState();
 }
 
-class _EducationEditPageState extends State<EducationEditPage> {
+class _EducationAddPageState extends State<EducationAddPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _synopsisController = TextEditingController();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'education_edit.dart';
+import 'education_add.dart';
 
 class EducationMaterialPage extends StatelessWidget {
   const EducationMaterialPage({Key? key}) : super(key: key);
@@ -65,18 +66,46 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
   void _onAddNew() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => EducationEditPage()),
+      MaterialPageRoute(builder: (context) => EducationAddPage()),
     );
   }
 
   void _onEdit(int index) {
-    // TODO: Logic edit konten di index
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => EducationEditPage()),
+    );
   }
 
   void _onDelete(int index) {
-    setState(() {
-      _filteredContents.removeAt(index);
-    });
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Confirm Deletion'),
+            content: const Text(
+              'Are you sure you want to delete this content?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(), // Cancel
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _filteredContents.removeAt(index);
+                  });
+                  Navigator.of(context).pop(); // Close dialog
+                },
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+    );
   }
 
   @override
@@ -100,7 +129,7 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                   icon: const Icon(Icons.add),
                   label: const Text('Add New'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade700,
+                    backgroundColor: Colors.blue,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 10,
