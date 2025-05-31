@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:video_player/video_player.dart';
 
 class EducationEditPage extends StatefulWidget {
   final DocumentSnapshot document;
@@ -23,10 +24,12 @@ class _EducationEditPageState extends State<EducationEditPage> {
   final List<String> _types = ['Video', 'Artikel', 'Lainnya'];
   String? _selectedType;
 
-  String? _imageUrl; // Gambar lama dari Firestore
-  File? _selectedImageFile; // Gambar baru yang dipilih admin
+  String? _imageUrl;
+  String? _thumbnailUrl;
+  File? _selectedImageFile;
 
   final ImagePicker _picker = ImagePicker();
+  VideoPlayerController? _videoController;
 
   @override
   void initState() {
@@ -38,6 +41,19 @@ class _EducationEditPageState extends State<EducationEditPage> {
     _linkController = TextEditingController(text: data['link'] ?? '');
     _selectedType = data['type'];
     _imageUrl = data['imageUrl'];
+    _thumbnailUrl = data['thumbnailUrl'];
+
+    if (_selectedType == 'Video' && _linkController.text.isNotEmpty) {
+      _initializeVideo(_linkController.text);
+    }
+  }
+
+  void _initializeVideo(String url) {
+    _videoController = VideoPlayerController.networkUrl(Uri.parse(url))
+      ..initialize().then((_) {
+        setState(() {});
+        _videoController?.setLooping(true);
+      });
   }
 
   Future<void> _pickImage() async {
@@ -49,17 +65,15 @@ class _EducationEditPageState extends State<EducationEditPage> {
     }
   }
 
-  Future<String?> _uploadToCloudinary(File imageFile) async {
+  Future<String?> _uploadToCloudinary(File file) async {
     const cloudinaryUrl =
-        "https://api.cloudinary.com/v1_1/dnyyh9ayk/image/upload";
+        "https://api.cloudinary.com/v1_1/dnyyh9ayk/video/upload";
     const uploadPreset = "sehealthy";
 
     final request =
         http.MultipartRequest('POST', Uri.parse(cloudinaryUrl))
           ..fields['upload_preset'] = uploadPreset
-          ..files.add(
-            await http.MultipartFile.fromPath('file', imageFile.path),
-          );
+          ..files.add(await http.MultipartFile.fromPath('file', file.path));
 
     final response = await request.send();
 
@@ -76,13 +90,13 @@ class _EducationEditPageState extends State<EducationEditPage> {
     if (_formKey.currentState!.validate()) {
       try {
         String? imageUrlToSave = _imageUrl;
-
         if (_selectedImageFile != null) {
           final uploadedUrl = await _uploadToCloudinary(_selectedImageFile!);
           if (uploadedUrl == null) {
-            throw Exception("Upload gambar gagal");
+            throw Exception("Upload file gagal");
           }
           imageUrlToSave = uploadedUrl;
+          _linkController.text = uploadedUrl; // update juga ke link
         }
 
         final updatedData = {
@@ -109,7 +123,7 @@ class _EducationEditPageState extends State<EducationEditPage> {
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal menyimpan perubahan: $e'),
+            content: Text('Gagal menyimpan perubahan: \$e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -117,33 +131,58 @@ class _EducationEditPageState extends State<EducationEditPage> {
     }
   }
 
-  Widget _buildImagePreview() {
-    if (_selectedImageFile != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.file(
-          _selectedImageFile!,
-          width: double.infinity,
-          height: 180,
-          fit: BoxFit.cover,
-        ),
-      );
+  Widget _buildMediaPreview() {
+    if (_selectedType == 'Video' && _linkController.text.isNotEmpty) {
+      if (_videoController != null && _videoController!.value.isInitialized) {
+        return AspectRatio(
+          aspectRatio: _videoController!.value.aspectRatio,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              VideoPlayer(_videoController!),
+              IconButton(
+                icon: Icon(
+                  _videoController!.value.isPlaying
+                      ? Icons.pause_circle
+                      : Icons.play_circle,
+                  color: Colors.white,
+                  size: 48,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _videoController!.value.isPlaying
+                        ? _videoController!.pause()
+                        : _videoController!.play();
+                  });
+                },
+              ),
+            ],
+          ),
+        );
+      } else {
+        return const Center(child: CircularProgressIndicator());
+      }
+    } else if (_selectedImageFile != null) {
+      return Image.file(_selectedImageFile!, height: 180, fit: BoxFit.cover);
     } else if (_imageUrl != null && _imageUrl!.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          _imageUrl!,
-          width: double.infinity,
-          height: 180,
-          fit: BoxFit.cover,
-        ),
-      );
+      return Image.network(_imageUrl!, height: 180, fit: BoxFit.cover);
+    } else if (_thumbnailUrl != null && _thumbnailUrl!.isNotEmpty) {
+      return Image.network(_thumbnailUrl!, height: 180, fit: BoxFit.cover);
     } else {
       return const Text(
-        '[Klik untuk pilih gambar]',
+        '[Klik untuk pilih gambar/video]',
         style: TextStyle(fontSize: 16),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _synopsisController.dispose();
+    _linkController.dispose();
+    _videoController?.dispose();
+    super.dispose();
   }
 
   @override
@@ -174,7 +213,7 @@ class _EducationEditPageState extends State<EducationEditPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
-                  child: _buildImagePreview(),
+                  child: _buildMediaPreview(),
                 ),
               ),
               const SizedBox(height: 20),
@@ -199,7 +238,14 @@ class _EducationEditPageState extends State<EducationEditPage> {
                               DropdownMenuItem(value: type, child: Text(type)),
                         )
                         .toList(),
-                onChanged: (value) => setState(() => _selectedType = value),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedType = value;
+                    if (value == 'Video' && _linkController.text.isNotEmpty) {
+                      _initializeVideo(_linkController.text);
+                    }
+                  });
+                },
                 validator:
                     (value) =>
                         value == null ? 'Jenis konten harus dipilih' : null,
@@ -219,6 +265,11 @@ class _EducationEditPageState extends State<EducationEditPage> {
               TextFormField(
                 controller: _linkController,
                 decoration: _inputDecoration('Link (video atau artikel)'),
+                onChanged: (val) {
+                  if (_selectedType == 'Video') {
+                    _initializeVideo(val);
+                  }
+                },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Link tidak boleh kosong';

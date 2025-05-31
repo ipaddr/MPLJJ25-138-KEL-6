@@ -180,7 +180,10 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                           final title = data['title'] ?? '';
                           final type = data['type'] ?? '';
                           final detail = data['detail'] ?? '';
-                          final imageUrl = data['imageUrl'];
+                          final mediaUrl = data['imageUrl'];
+                          final thumbnailUrl = data['thumbnailUrl'];
+                          final isVideo =
+                              type.toString().toLowerCase() == 'video';
 
                           return Container(
                             decoration: BoxDecoration(
@@ -197,23 +200,49 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                             padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
-                                // Thumbnail
+                                // Media thumbnail
                                 Container(
                                   width: 60,
                                   height: 60,
                                   decoration: BoxDecoration(
-                                    color: Colors.grey.shade300,
                                     borderRadius: BorderRadius.circular(8),
-                                    image:
-                                        imageUrl != null
-                                            ? DecorationImage(
-                                              image: NetworkImage(imageUrl),
-                                              fit: BoxFit.cover,
-                                            )
-                                            : null,
+                                    color: Colors.grey.shade300,
+                                  ),
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          isVideo
+                                              ? (thumbnailUrl ?? '')
+                                              : (mediaUrl ?? ''),
+                                          width: 60,
+                                          height: 60,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  Container(
+                                                    color: Colors.grey,
+                                                    width: 60,
+                                                    height: 60,
+                                                    child: const Icon(
+                                                      Icons.broken_image,
+                                                    ),
+                                                  ),
+                                        ),
+                                      ),
+                                      if (isVideo)
+                                        const Icon(
+                                          Icons.play_circle_fill,
+                                          color: Colors.white,
+                                          size: 28,
+                                        ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(width: 16),
+
                                 // Title & subtitle
                                 Expanded(
                                   child: Column(
@@ -238,6 +267,7 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                                     ],
                                   ),
                                 ),
+
                                 // Edit & Delete
                                 IconButton(
                                   icon: const Icon(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:video_player/video_player.dart';
 import 'dart:convert';
 
 class EducationAddPage extends StatefulWidget {
@@ -20,29 +21,69 @@ class _EducationAddPageState extends State<EducationAddPage> {
 
   final List<String> _types = ['Video', 'Artikel', 'Lainnya'];
   String? _selectedType;
-  File? _selectedImage;
+  File? _selectedMedia;
+  VideoPlayerController? _videoController;
+
+  File? _thumbnailFile; // Tambahan: File thumbnail
+  String? _thumbnailUrl;
 
   final ImagePicker _picker = ImagePicker();
 
-  Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+  Future<void> _pickMedia() async {
+    if (_selectedType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih jenis konten terlebih dahulu.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final pickedFile =
+        (_selectedType == 'Video')
+            ? await _picker.pickVideo(source: ImageSource.gallery)
+            : await _picker.pickImage(source: ImageSource.gallery);
+
     if (pickedFile != null) {
       setState(() {
-        _selectedImage = File(pickedFile.path);
+        _selectedMedia = File(pickedFile.path);
+        if (_selectedType == 'Video') {
+          _videoController?.dispose();
+          _videoController = VideoPlayerController.file(_selectedMedia!)
+            ..initialize().then((_) {
+              setState(() {});
+            });
+        }
       });
     }
   }
 
-  Future<String?> _uploadToCloudinary(File imageFile) async {
-    const cloudinaryUrl =
-        "https://api.cloudinary.com/v1_1/dnyyh9ayk/image/upload";
+  // Tambahan: pilih thumbnail
+  Future<void> _pickThumbnail() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _thumbnailFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String?> _uploadToCloudinary(
+    File mediaFile, {
+    bool isVideo = false,
+  }) async {
+    final cloudinaryUrl =
+        isVideo
+            ? "https://api.cloudinary.com/v1_1/dnyyh9ayk/video/upload"
+            : "https://api.cloudinary.com/v1_1/dnyyh9ayk/image/upload";
     const uploadPreset = "sehealthy";
 
     final request =
         http.MultipartRequest('POST', Uri.parse(cloudinaryUrl))
           ..fields['upload_preset'] = uploadPreset
           ..files.add(
-            await http.MultipartFile.fromPath('file', imageFile.path),
+            await http.MultipartFile.fromPath('file', mediaFile.path),
           );
 
     final response = await request.send();
@@ -58,10 +99,10 @@ class _EducationAddPageState extends State<EducationAddPage> {
 
   Future<void> _saveContent() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedImage == null) {
+      if (_selectedMedia == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Gambar harus dipilih!'),
+            content: Text('Media harus dipilih!'),
             backgroundColor: Colors.red,
           ),
         );
@@ -69,9 +110,18 @@ class _EducationAddPageState extends State<EducationAddPage> {
       }
 
       try {
-        final imageUrl = await _uploadToCloudinary(_selectedImage!);
-        if (imageUrl == null) {
-          throw Exception("Upload ke Cloudinary gagal");
+        final mediaUrl = await _uploadToCloudinary(
+          _selectedMedia!,
+          isVideo: _selectedType == 'Video',
+        );
+
+        if (mediaUrl == null) {
+          throw Exception("Upload media gagal");
+        }
+
+        String? thumbnailUrl;
+        if (_selectedType == 'Video' && _thumbnailFile != null) {
+          thumbnailUrl = await _uploadToCloudinary(_thumbnailFile!);
         }
 
         final newContent = {
@@ -79,7 +129,8 @@ class _EducationAddPageState extends State<EducationAddPage> {
           'type': _selectedType,
           'synopsis': _synopsisController.text,
           'link': _linkController.text,
-          'imageUrl': imageUrl,
+          'mediaUrl': mediaUrl,
+          'thumbnailUrl': thumbnailUrl,
           'createdAt': FieldValue.serverTimestamp(),
         };
 
@@ -104,6 +155,12 @@ class _EducationAddPageState extends State<EducationAddPage> {
         );
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    super.dispose();
   }
 
   @override
@@ -144,7 +201,7 @@ class _EducationAddPageState extends State<EducationAddPage> {
           child: ListView(
             children: [
               GestureDetector(
-                onTap: _pickImage,
+                onTap: _pickMedia,
                 child: Container(
                   height: 180,
                   decoration: BoxDecoration(
@@ -153,21 +210,64 @@ class _EducationAddPageState extends State<EducationAddPage> {
                   ),
                   alignment: Alignment.center,
                   child:
-                      _selectedImage != null
-                          ? ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.file(
-                              _selectedImage!,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
-                          )
+                      _selectedMedia != null
+                          ? (_selectedType == 'Video'
+                              ? (_videoController != null &&
+                                      _videoController!.value.isInitialized
+                                  ? AspectRatio(
+                                    aspectRatio:
+                                        _videoController!.value.aspectRatio,
+                                    child: VideoPlayer(_videoController!),
+                                  )
+                                  : const Text('Memuat video...'))
+                              : ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.file(
+                                  _selectedMedia!,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ))
                           : const Text(
                             '[Insert here]',
                             style: TextStyle(fontSize: 16),
                           ),
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Tambahan: Thumbnail picker jika Video
+              if (_selectedType == 'Video') ...[
+                const SizedBox(height: 8),
+                const Text(
+                  "Thumbnail (opsional)",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: _pickThumbnail,
+                  child: Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.blueAccent),
+                    ),
+                    child:
+                        _thumbnailFile != null
+                            ? ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.file(
+                                _thumbnailFile!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              ),
+                            )
+                            : const Center(child: Text('Upload Thumbnail')),
+                  ),
+                ),
+              ],
+
               const SizedBox(height: 20),
               TextFormField(
                 controller: _titleController,
@@ -210,6 +310,10 @@ class _EducationAddPageState extends State<EducationAddPage> {
                 onChanged: (value) {
                   setState(() {
                     _selectedType = value;
+                    _selectedMedia = null;
+                    _thumbnailFile = null;
+                    _videoController?.dispose();
+                    _videoController = null;
                   });
                 },
                 validator:
@@ -272,7 +376,7 @@ class _EducationAddPageState extends State<EducationAddPage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text('Cancle'),
+                      child: const Text('Cancel'),
                     ),
                   ),
                   const SizedBox(width: 16),
