@@ -19,8 +19,7 @@ dependencies:
   firebase_auth: ^4.17.7
   firebase_storage: ^11.6.7
   intl: ^0.18.0
-  image_picker: ^1.0.4
-  file_picker: ^6.1.1
+  image_picker: ^1.0.7
 
   # UI & icon support
   cupertino_icons: ^1.0.8

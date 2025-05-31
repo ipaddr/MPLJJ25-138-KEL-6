@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
 
 class EducationAddPage extends StatefulWidget {
   const EducationAddPage({super.key});
@@ -19,17 +22,41 @@ class _EducationAddPageState extends State<EducationAddPage> {
   String? _selectedType;
   File? _selectedImage;
 
-  Future<void> _pickImage() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+  final ImagePicker _picker = ImagePicker();
 
-    if (result != null && result.files.single.path != null) {
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
       setState(() {
-        _selectedImage = File(result.files.single.path!);
+        _selectedImage = File(pickedFile.path);
       });
     }
   }
 
-  void _saveContent() {
+  Future<String?> _uploadToCloudinary(File imageFile) async {
+    const cloudinaryUrl =
+        "https://api.cloudinary.com/v1_1/dnyyh9ayk/image/upload";
+    const uploadPreset = "sehealthy";
+
+    final request =
+        http.MultipartRequest('POST', Uri.parse(cloudinaryUrl))
+          ..fields['upload_preset'] = uploadPreset
+          ..files.add(
+            await http.MultipartFile.fromPath('file', imageFile.path),
+          );
+
+    final response = await request.send();
+
+    if (response.statusCode == 200) {
+      final res = await http.Response.fromStream(response);
+      final data = jsonDecode(res.body);
+      return data['secure_url'];
+    } else {
+      return null;
+    }
+  }
+
+  Future<void> _saveContent() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedImage == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -41,15 +68,41 @@ class _EducationAddPageState extends State<EducationAddPage> {
         return;
       }
 
-      final newContent = {
-        'title': _titleController.text,
-        'type': _selectedType,
-        'synopsis': _synopsisController.text,
-        'link': _linkController.text,
-        'imagePath': _selectedImage!.path,
-      };
+      try {
+        final imageUrl = await _uploadToCloudinary(_selectedImage!);
+        if (imageUrl == null) {
+          throw Exception("Upload ke Cloudinary gagal");
+        }
 
-      Navigator.pop(context, newContent);
+        final newContent = {
+          'title': _titleController.text,
+          'type': _selectedType,
+          'synopsis': _synopsisController.text,
+          'link': _linkController.text,
+          'imageUrl': imageUrl,
+          'createdAt': FieldValue.serverTimestamp(),
+        };
+
+        await FirebaseFirestore.instance
+            .collection('educational_contents')
+            .add(newContent);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Konten berhasil disimpan!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan konten: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -110,13 +163,12 @@ class _EducationAddPageState extends State<EducationAddPage> {
                             ),
                           )
                           : const Text(
-                            '[Insert Here]',
+                            '[Insert here]',
                             style: TextStyle(fontSize: 16),
                           ),
                 ),
               ),
               const SizedBox(height: 20),
-
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(
@@ -136,7 +188,6 @@ class _EducationAddPageState extends State<EducationAddPage> {
                             : null,
               ),
               const SizedBox(height: 16),
-
               DropdownButtonFormField<String>(
                 value: _selectedType,
                 hint: const Text('Select Type of New'),
@@ -168,7 +219,6 @@ class _EducationAddPageState extends State<EducationAddPage> {
                             : null,
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _synopsisController,
                 maxLines: 4,
@@ -186,11 +236,10 @@ class _EducationAddPageState extends State<EducationAddPage> {
                             : null,
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _linkController,
                 decoration: InputDecoration(
-                  hintText: 'Insert Link (Video or Article)',
+                  hintText: 'Insert Link (video or article)',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -199,14 +248,18 @@ class _EducationAddPageState extends State<EducationAddPage> {
                     vertical: 12,
                   ),
                 ),
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty
-                            ? 'Link tidak boleh kosong'
-                            : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Link tidak boleh kosong';
+                  }
+                  final urlPattern = r'(http|https):\/\/([\w.]+\/?)\S*';
+                  if (!RegExp(urlPattern).hasMatch(value)) {
+                    return 'Masukkan link yang valid';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 32),
-
               Row(
                 children: [
                   Expanded(
@@ -219,7 +272,7 @@ class _EducationAddPageState extends State<EducationAddPage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text('Cancel'),
+                      child: const Text('Cancle'),
                     ),
                   ),
                   const SizedBox(width: 16),

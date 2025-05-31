@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'education_edit.dart';
 import 'education_add.dart';
@@ -7,7 +8,7 @@ class EducationMaterialPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: const EducationMaterialPageBody());
+    return const Scaffold(body: EducationMaterialPageBody());
   }
 }
 
@@ -21,63 +22,57 @@ class EducationMaterialPageBody extends StatefulWidget {
 
 class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
   final TextEditingController _searchController = TextEditingController();
-
-  final List<Map<String, String>> _allContents = [
-    {
-      'title': 'Healthy Diet Guidelines',
-      'category': 'Diet',
-      'detail': '10 min read',
-    },
-    {
-      'title': 'Daily Exercise Routine',
-      'category': 'Lifestyle',
-      'detail': 'Video',
-    },
-  ];
-
-  List<Map<String, String>> _filteredContents = [];
+  List<DocumentSnapshot> _allContents = [];
+  List<DocumentSnapshot> _filteredContents = [];
 
   @override
   void initState() {
     super.initState();
-    _filteredContents = List.from(_allContents);
     _searchController.addListener(_onSearchChanged);
+    _fetchContents();
+  }
+
+  Future<void> _fetchContents() async {
+    final snapshot =
+        await FirebaseFirestore.instance
+            .collection('educational_contents')
+            .orderBy('title')
+            .get();
+
+    setState(() {
+      _allContents = snapshot.docs;
+      _filteredContents = _allContents;
+    });
   }
 
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
     setState(() {
       _filteredContents =
-          _allContents.where((content) {
-            final titleLower = content['title']!.toLowerCase();
-            final categoryLower = content['category']!.toLowerCase();
-            return titleLower.contains(query) || categoryLower.contains(query);
+          _allContents.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final title = data['title']?.toString().toLowerCase() ?? '';
+            final type = data['type']?.toString().toLowerCase() ?? '';
+            return title.contains(query) || type.contains(query);
           }).toList();
     });
-  }
-
-  @override
-  void dispose() {
-    _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
-    super.dispose();
   }
 
   void _onAddNew() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => EducationAddPage()),
-    );
+      MaterialPageRoute(builder: (context) => const EducationAddPage()),
+    ).then((_) => _fetchContents());
   }
 
-  void _onEdit(int index) {
+  void _onEdit(DocumentSnapshot doc) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => EducationEditPage()),
-    );
+      MaterialPageRoute(builder: (context) => EducationEditPage(document: doc)),
+    ).then((_) => _fetchContents());
   }
 
-  void _onDelete(int index) {
+  void _onDelete(DocumentSnapshot doc) {
     showDialog(
       context: context,
       builder:
@@ -88,15 +83,17 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(), // Cancel
+                onPressed: () => Navigator.of(context).pop(),
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () {
-                  setState(() {
-                    _filteredContents.removeAt(index);
-                  });
-                  Navigator.of(context).pop(); // Close dialog
+                onPressed: () async {
+                  await FirebaseFirestore.instance
+                      .collection('educational_contents')
+                      .doc(doc.id)
+                      .delete();
+                  Navigator.of(context).pop();
+                  _fetchContents();
                 },
                 child: const Text(
                   'Delete',
@@ -106,6 +103,13 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
             ],
           ),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -171,7 +175,13 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                         itemCount: _filteredContents.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
-                          final content = _filteredContents[index];
+                          final doc = _filteredContents[index];
+                          final data = doc.data() as Map<String, dynamic>;
+                          final title = data['title'] ?? '';
+                          final type = data['type'] ?? '';
+                          final detail = data['detail'] ?? '';
+                          final imageUrl = data['imageUrl'];
+
                           return Container(
                             decoration: BoxDecoration(
                               color: Colors.grey.shade100,
@@ -187,13 +197,20 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                             padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
-                                // Thumbnail Placeholder
+                                // Thumbnail
                                 Container(
                                   width: 60,
                                   height: 60,
                                   decoration: BoxDecoration(
                                     color: Colors.grey.shade300,
                                     borderRadius: BorderRadius.circular(8),
+                                    image:
+                                        imageUrl != null
+                                            ? DecorationImage(
+                                              image: NetworkImage(imageUrl),
+                                              fit: BoxFit.cover,
+                                            )
+                                            : null,
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -204,7 +221,7 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        content['title'] ?? '',
+                                        title,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 16,
@@ -212,7 +229,7 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '${content['category']} • ${content['detail']}',
+                                        '$type • $detail',
                                         style: TextStyle(
                                           color: Colors.grey.shade700,
                                           fontSize: 14,
@@ -221,20 +238,20 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                                     ],
                                   ),
                                 ),
-                                // Edit & Delete Icons
+                                // Edit & Delete
                                 IconButton(
                                   icon: const Icon(
                                     Icons.edit,
                                     color: Colors.blue,
                                   ),
-                                  onPressed: () => _onEdit(index),
+                                  onPressed: () => _onEdit(doc),
                                 ),
                                 IconButton(
                                   icon: const Icon(
                                     Icons.delete,
                                     color: Colors.redAccent,
                                   ),
-                                  onPressed: () => _onDelete(index),
+                                  onPressed: () => _onDelete(doc),
                                 ),
                               ],
                             ),

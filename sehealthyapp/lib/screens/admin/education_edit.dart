@@ -1,9 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class EducationEditPage extends StatefulWidget {
-  const EducationEditPage({super.key});
+  final DocumentSnapshot document;
+
+  const EducationEditPage({Key? key, required this.document}) : super(key: key);
 
   @override
   State<EducationEditPage> createState() => _EducationEditPageState();
@@ -11,45 +16,133 @@ class EducationEditPage extends StatefulWidget {
 
 class _EducationEditPageState extends State<EducationEditPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _synopsisController = TextEditingController();
-  final TextEditingController _linkController = TextEditingController();
+  late TextEditingController _titleController;
+  late TextEditingController _synopsisController;
+  late TextEditingController _linkController;
 
   final List<String> _types = ['Video', 'Artikel', 'Lainnya'];
   String? _selectedType;
-  File? _selectedImage;
+
+  String? _imageUrl; // Gambar lama dari Firestore
+  File? _selectedImageFile; // Gambar baru yang dipilih admin
+
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    final data = widget.document.data() as Map<String, dynamic>;
+
+    _titleController = TextEditingController(text: data['title'] ?? '');
+    _synopsisController = TextEditingController(text: data['synopsis'] ?? '');
+    _linkController = TextEditingController(text: data['link'] ?? '');
+    _selectedType = data['type'];
+    _imageUrl = data['imageUrl'];
+  }
 
   Future<void> _pickImage() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-
-    if (result != null && result.files.single.path != null) {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
       setState(() {
-        _selectedImage = File(result.files.single.path!);
+        _selectedImageFile = File(pickedFile.path);
       });
     }
   }
 
-  void _saveContent() {
+  Future<String?> _uploadToCloudinary(File imageFile) async {
+    const cloudinaryUrl =
+        "https://api.cloudinary.com/v1_1/dnyyh9ayk/image/upload";
+    const uploadPreset = "sehealthy";
+
+    final request =
+        http.MultipartRequest('POST', Uri.parse(cloudinaryUrl))
+          ..fields['upload_preset'] = uploadPreset
+          ..files.add(
+            await http.MultipartFile.fromPath('file', imageFile.path),
+          );
+
+    final response = await request.send();
+
+    if (response.statusCode == 200) {
+      final res = await http.Response.fromStream(response);
+      final data = jsonDecode(res.body);
+      return data['secure_url'];
+    } else {
+      return null;
+    }
+  }
+
+  Future<void> _saveChanges() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedImage == null) {
+      try {
+        String? imageUrlToSave = _imageUrl;
+
+        if (_selectedImageFile != null) {
+          final uploadedUrl = await _uploadToCloudinary(_selectedImageFile!);
+          if (uploadedUrl == null) {
+            throw Exception("Upload gambar gagal");
+          }
+          imageUrlToSave = uploadedUrl;
+        }
+
+        final updatedData = {
+          'title': _titleController.text,
+          'type': _selectedType,
+          'synopsis': _synopsisController.text,
+          'link': _linkController.text,
+          'imageUrl': imageUrlToSave,
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+
+        await FirebaseFirestore.instance
+            .collection('educational_contents')
+            .doc(widget.document.id)
+            .update(updatedData);
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Gambar harus dipilih!'),
+            content: Text('Konten berhasil diperbarui!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan perubahan: $e'),
             backgroundColor: Colors.red,
           ),
         );
-        return;
       }
+    }
+  }
 
-      final newContent = {
-        'title': _titleController.text,
-        'type': _selectedType,
-        'synopsis': _synopsisController.text,
-        'link': _linkController.text,
-        'imagePath': _selectedImage!.path,
-      };
-
-      Navigator.pop(context, newContent);
+  Widget _buildImagePreview() {
+    if (_selectedImageFile != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.file(
+          _selectedImageFile!,
+          width: double.infinity,
+          height: 180,
+          fit: BoxFit.cover,
+        ),
+      );
+    } else if (_imageUrl != null && _imageUrl!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          _imageUrl!,
+          width: double.infinity,
+          height: 180,
+          fit: BoxFit.cover,
+        ),
+      );
+    } else {
+      return const Text(
+        '[Klik untuk pilih gambar]',
+        style: TextStyle(fontSize: 16),
+      );
     }
   }
 
@@ -60,29 +153,11 @@ class _EducationEditPageState extends State<EducationEditPage> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        titleSpacing: 2,
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundImage: const AssetImage(
-                'assets/images/hospital_icon.png',
-              ),
-              radius: 18,
-              backgroundColor: Colors.grey.shade200,
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Welcome, \nAdmin Rumah Sakit!',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ],
+        title: const Text(
+          'Edit Konten Edukasi',
+          style: TextStyle(color: Colors.black87),
         ),
+        iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -99,36 +174,13 @@ class _EducationEditPageState extends State<EducationEditPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
-                  child:
-                      _selectedImage != null
-                          ? ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.file(
-                              _selectedImage!,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                          : const Text(
-                            '[Insert Here]',
-                            style: TextStyle(fontSize: 16),
-                          ),
+                  child: _buildImagePreview(),
                 ),
               ),
               const SizedBox(height: 20),
-
               TextFormField(
                 controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: 'Title',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                ),
+                decoration: _inputDecoration('Judul'),
                 validator:
                     (value) =>
                         value == null || value.isEmpty
@@ -136,19 +188,10 @@ class _EducationEditPageState extends State<EducationEditPage> {
                             : null,
               ),
               const SizedBox(height: 16),
-
               DropdownButtonFormField<String>(
                 value: _selectedType,
-                hint: const Text('Select Type of New'),
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                ),
+                hint: const Text('Pilih Jenis Konten'),
+                decoration: _inputDecoration(''),
                 items:
                     _types
                         .map(
@@ -156,29 +199,16 @@ class _EducationEditPageState extends State<EducationEditPage> {
                               DropdownMenuItem(value: type, child: Text(type)),
                         )
                         .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedType = value;
-                  });
-                },
+                onChanged: (value) => setState(() => _selectedType = value),
                 validator:
                     (value) =>
-                        value == null || value.isEmpty
-                            ? 'Jenis konten harus dipilih'
-                            : null,
+                        value == null ? 'Jenis konten harus dipilih' : null,
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _synopsisController,
                 maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Enter Synopsis',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.all(12),
-                ),
+                decoration: _inputDecoration('Sinopsis'),
                 validator:
                     (value) =>
                         value == null || value.isEmpty
@@ -186,27 +216,21 @@ class _EducationEditPageState extends State<EducationEditPage> {
                             : null,
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _linkController,
-                decoration: InputDecoration(
-                  hintText: 'Insert Link (Video or Article)',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                ),
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty
-                            ? 'Link tidak boleh kosong'
-                            : null,
+                decoration: _inputDecoration('Link (video atau artikel)'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Link tidak boleh kosong';
+                  }
+                  final urlPattern = r'(http|https):\/\/([\w.]+\/?)\S*';
+                  if (!RegExp(urlPattern).hasMatch(value)) {
+                    return 'Masukkan link yang valid';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 32),
-
               Row(
                 children: [
                   Expanded(
@@ -219,13 +243,13 @@ class _EducationEditPageState extends State<EducationEditPage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text('Cancel'),
+                      child: const Text('Batal'),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _saveContent,
+                      onPressed: _saveChanges,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -233,7 +257,7 @@ class _EducationEditPageState extends State<EducationEditPage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Text('Save'),
+                      child: const Text('Simpan'),
                     ),
                   ),
                 ],
@@ -244,4 +268,10 @@ class _EducationEditPageState extends State<EducationEditPage> {
       ),
     );
   }
+
+  InputDecoration _inputDecoration(String hint) => InputDecoration(
+    hintText: hint,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+  );
 }
