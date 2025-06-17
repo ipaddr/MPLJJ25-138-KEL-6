@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'tbc_result_screen.dart';
 
 class PageTBCScreening extends StatefulWidget {
   const PageTBCScreening({Key? key}) : super(key: key);
@@ -35,7 +36,7 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
     },
     {
       'icon': 'assets/images/img12.png',
-      'question': 'Have you been in contact with someone diagnosed with TBC?',
+      'question': 'Have you been in contact with someone diagnosed with TB?',
     },
     {
       'icon': 'assets/images/img10.png',
@@ -47,7 +48,8 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
     },
     {
       'icon': 'assets/images/img12.png',
-      'question': 'Have you traveled to areas with high TBC prevalence recently?',
+      'question':
+          'Have you traveled to areas with high TB prevalence recently?',
     },
   ];
 
@@ -67,32 +69,36 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
       return;
     }
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text(
-          'Screening Completed',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: const Text(
-          'Thank you for completing the screening.',
-          style: TextStyle(fontFamily: 'Poppins'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text(
-              'Close',
-              style: TextStyle(fontFamily: 'Poppins'),
-            ),
-          ),
-        ],
+    // ✅ Determine TB risk level based on selected answers
+    List<String> factors = [];
+
+    if (_answers[0] == 'Yes') {
+      factors.add('Persistent cough for more than 2 weeks');
+    }
+    if (_answers[3] == 'Yes') {
+      factors.add('Coughing up blood');
+    }
+    if (_answers[6] == 'Yes') {
+      factors.add('Contact with someone diagnosed with TB');
+    }
+    if (_answers[9] == 'Yes') {
+      factors.add('Recent travel to TB high-risk area');
+    }
+
+    String riskLevel;
+    if (factors.length >= 3) {
+      riskLevel = 'High';
+    } else if (factors.length == 2) {
+      riskLevel = 'Medium';
+    } else {
+      riskLevel = 'Low';
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => TBCResultScreen(riskLevel: riskLevel, riskFactors: factors),
       ),
     );
   }
@@ -153,9 +159,9 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
 
     Color selectedColor;
     if (label == 'Yes') {
-      selectedColor = const Color(0xFF90CAF9); // Biru muda
+      selectedColor = const Color(0xFF90CAF9);
     } else {
-      selectedColor = const Color(0xFFEF9A9A); // Merah muda
+      selectedColor = const Color(0xFFEF9A9A);
     }
 
     return ElevatedButton(
