@@ -51,7 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else {
       final data = biodataDoc.data();
       setState(() {
-        _photoUrl = data?['photoUrl'];
+        _photoUrl = data?['photoUrl'] ?? '';
       });
     }
   }
@@ -83,8 +83,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final data = snapshot.data!.data() as Map<String, dynamic>? ?? {};
           final nik = data['nik'] ?? '-';
           final bloodType = data['bloodType'] ?? '';
-
-          // Pakai _photoUrl yang sudah di-set di state
           final photoUrl = _photoUrl ?? '';
 
           return SingleChildScrollView(
@@ -92,7 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               children: [
                 CircleAvatar(
-                  radius: 35,
+                  radius: 43,
                   backgroundColor: Colors.blueAccent,
                   backgroundImage:
                       photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
@@ -105,7 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           )
                           : null,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
                   name,
                   style: const TextStyle(
@@ -144,13 +142,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
+                    onPressed: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => EditProfilePage(),
                         ),
                       );
+                      _loadProfileData(); // Refresh setelah edit
                     },
                     icon: const Icon(Icons.edit),
                     label: const Text('Edit Profile'),

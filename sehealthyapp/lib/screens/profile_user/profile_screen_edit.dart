@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -15,6 +19,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   String fullName = 'Loading...';
   String patientId = '';
+  String? _photoUrl;
+  File? _imageFile;
 
   @override
   void initState() {
@@ -22,12 +28,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _loadUserData();
   }
 
-  void _loadUserData() async {
+  Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final doc =
           await FirebaseFirestore.instance
-              .collection('users')
+              .collection('biodata')
               .doc(user.uid)
               .get();
       final data = doc.data();
@@ -36,18 +42,65 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _nikController.text = data['nik'] ?? '';
           _bloodTypeController.text = data['bloodType'] ?? '';
           fullName = data['fullName'] ?? user.displayName ?? 'User';
-          patientId =
-              data['patientId'] ?? user.uid.substring(0, 5); // default dari UID
+          patientId = user.uid.substring(0, 5);
+          _photoUrl = data['photoUrl'] ?? '';
         });
       }
     }
   }
 
-  @override
-  void dispose() {
-    _nikController.dispose();
-    _bloodTypeController.dispose();
-    super.dispose();
+  Future<void> _pickImageAndUpload() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final file = File(pickedFile.path);
+      setState(() {
+        _imageFile = file;
+      });
+
+      final cloudinaryUrl = await _uploadToCloudinary(file);
+      if (cloudinaryUrl != null) {
+        setState(() {
+          _photoUrl = cloudinaryUrl;
+        });
+
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          await FirebaseFirestore.instance
+              .collection('biodata')
+              .doc(user.uid)
+              .set({'photoUrl': _photoUrl}, SetOptions(merge: true));
+        }
+      }
+    }
+  }
+
+  Future<String?> _uploadToCloudinary(File imageFile) async {
+    const cloudName = 'dnyyh9ayk'; // Ganti dengan cloud name kamu
+    const uploadPreset =
+        'foto_profil_preset'; // Ganti dengan upload preset kamu
+    final url = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+    );
+
+    final request =
+        http.MultipartRequest('POST', url)
+          ..fields['upload_preset'] = uploadPreset
+          ..files.add(
+            await http.MultipartFile.fromPath('file', imageFile.path),
+          );
+
+    final response = await request.send();
+    final responseData = await response.stream.bytesToString();
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(responseData);
+      return jsonResponse['secure_url'];
+    } else {
+      print('Upload gagal: ${response.reasonPhrase}');
+      return null;
+    }
   }
 
   void _onSave() async {
@@ -57,20 +110,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final newNIK = _nikController.text.trim();
       final newBloodType = _bloodTypeController.text.trim();
 
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        'nik': newNIK,
-        'bloodType': newBloodType,
-      }, SetOptions(merge: true));
-
-      final userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      final fullName =
-          userDoc.data()?['fullName'] ?? user.displayName ?? 'User';
-
       await FirebaseFirestore.instance.collection('biodata').doc(uid).set({
         'nik': newNIK,
         'bloodType': newBloodType,
         'fullName': fullName,
+        'photoUrl': _photoUrl ?? '',
       }, SetOptions(merge: true));
 
       ScaffoldMessenger.of(
@@ -103,6 +147,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   @override
+  void dispose() {
+    _nikController.dispose();
+    _bloodTypeController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFD9E7FF),
@@ -111,7 +162,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         elevation: 1,
         centerTitle: true,
         title: const Text(
-          'Profile',
+          'Edit Profile',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontWeight: FontWeight.w700,
@@ -133,9 +184,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     backgroundColor: Colors.white,
                     child: CircleAvatar(
                       radius: 48,
-                      backgroundImage: const NetworkImage(
-                        'https://i.pinimg.com/originals/14/4e/fd/144efdaf52422e3f38e63dd2fc887f07.png',
-                      ),
+                      backgroundImage:
+                          _photoUrl != null && _photoUrl!.isNotEmpty
+                              ? NetworkImage(_photoUrl!)
+                              : const NetworkImage(
+                                'https://i.pinimg.com/originals/14/4e/fd/144efdaf52422e3f38e63dd2fc887f07.png',
+                              ),
                     ),
                   ),
                   Positioned(
@@ -153,9 +207,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           color: Colors.white,
                           size: 20,
                         ),
-                        onPressed: () {
-                          // Logic edit foto profil
-                        },
+                        onPressed: _pickImageAndUpload,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -203,56 +255,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
               controller: _nikController,
               decoration: InputDecoration(
                 hintText: 'Enter your National ID',
-                hintStyle: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                  color: Colors.black45,
-                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 14,
                 ),
                 filled: true,
                 fillColor: Colors.white,
               ),
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w400,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontFamily: 'Poppins'),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _bloodTypeController,
               decoration: InputDecoration(
                 hintText: 'Enter your Blood Type',
-                hintStyle: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                  color: Colors.black45,
-                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 14,
                 ),
                 filled: true,
                 fillColor: Colors.white,
               ),
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w400,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontFamily: 'Poppins'),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -283,11 +305,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  textStyle: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
                 ),
                 child: const Text('Save'),
               ),
@@ -303,39 +320,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  textStyle: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
                 ),
                 child: const Text('Cancel'),
               ),
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2,
-        onTap: (index) {
-          // Navigasi tab (buat logika navigasi jika diperlukan)
-        },
-        selectedItemColor: Colors.blue.shade600,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_outlined),
-            label: 'Schedule',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
       ),
     );
   }
