@@ -21,6 +21,7 @@ dependencies:
   intl: ^0.18.0
   image_picker: ^1.0.7
   video_player: ^2.4.5
+  url_launcher: ^6.2.5
 
   # UI & icon support
   cupertino_icons: ^1.0.8
