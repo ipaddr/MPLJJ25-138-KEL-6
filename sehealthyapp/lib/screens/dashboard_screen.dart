@@ -336,7 +336,7 @@ class CardHealthCheckup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: const Color(0xFFADD2FF), // warna latar belakang biru muda
+      color: const Color(0xFFADD2FF),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
