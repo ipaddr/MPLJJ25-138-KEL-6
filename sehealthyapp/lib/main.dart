@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // ✅ Tambahkan import dotenv
+
 import 'firebase_options.dart';
 import 'screens/initial/first_screen.dart';
 import 'screens/user_flow/login_screen.dart';
@@ -10,7 +12,18 @@ import 'screens/health_checkup/page_health_checkup.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ Inisialisasi dotenv
+  try {
+    await dotenv.load(fileName: ".env");
+    print("✅ Environment variables loaded successfully");
+  } catch (e) {
+    print("❌ Error loading .env file: $e");
+  }
+
+  // ✅ Inisialisasi Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const MyApp());
 }
 
@@ -34,8 +47,7 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/dashboard': (context) => const DashboardScreen(),
         '/admin_register': (context) => const AdminRegisterScreen(),
-        '/health_checkup':
-            (context) => const PageHealthCheckup(), // <-- Route baru
+        '/health_checkup': (context) => const PageHealthCheckup(),
       },
     );
   }
