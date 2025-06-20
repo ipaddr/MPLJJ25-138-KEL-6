@@ -17,44 +17,47 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
   final List<Map<String, dynamic>> _questions = [
     {
       'icon': 'assets/images/img9.png',
-      'question': 'Have you had a cough for more than 2 weeks?',
+      'question': 'Apakah Anda mengalami batuk selama lebih dari 2 minggu?',
     },
     {
       'icon': 'assets/images/img10.png',
-      'question': 'Do you experience night sweats?',
+      'question': 'Apakah Anda sering berkeringat di malam hari?',
     },
     {
       'icon': 'assets/images/img11.png',
-      'question': 'Have you lost weight recently?',
+      'question':
+          'Apakah Anda mengalami penurunan berat badan akhir-akhir ini?',
     },
     {
       'icon': 'assets/images/img12.png',
-      'question': 'Have you been coughing up blood?',
+      'question': 'Apakah Anda pernah batuk berdarah?',
     },
     {
       'icon': 'assets/images/img10.png',
-      'question': 'Do you experience fever or chills frequently?',
+      'question': 'Apakah Anda sering mengalami demam atau menggigil?',
     },
     {
       'icon': 'assets/images/img11.png',
-      'question': 'Do you feel chest pain when breathing or coughing?',
-    },
-    {
-      'icon': 'assets/images/img12.png',
-      'question': 'Have you been in contact with someone diagnosed with TBC?',
-    },
-    {
-      'icon': 'assets/images/img10.png',
-      'question': 'Do you experience loss of appetite?',
-    },
-    {
-      'icon': 'assets/images/img11.png',
-      'question': 'Have you noticed swelling in your neck or lymph nodes?',
+      'question': 'Apakah Anda merasa nyeri dada saat bernapas atau batuk?',
     },
     {
       'icon': 'assets/images/img12.png',
       'question':
-          'Have you traveled to areas with high TBC prevalence recently?',
+          'Apakah Anda pernah kontak dengan seseorang yang terdiagnosis TBC?',
+    },
+    {
+      'icon': 'assets/images/img10.png',
+      'question': 'Apakah Anda mengalami penurunan nafsu makan?',
+    },
+    {
+      'icon': 'assets/images/img11.png',
+      'question':
+          'Apakah Anda mengalami pembengkakan di leher atau kelenjar getah bening?',
+    },
+    {
+      'icon': 'assets/images/img12.png',
+      'question':
+          'Apakah Anda baru-baru ini bepergian ke daerah dengan tingkat TBC tinggi?',
     },
   ];
 
@@ -305,7 +308,7 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
                           ),
                           SizedBox(width: 12),
                           Text(
-                            'Analyzing...',
+                            'Menganalisis...',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -316,7 +319,7 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
                         ],
                       )
                       : const Text(
-                        'Analyze Results',
+                        'Analisis Hasil',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
