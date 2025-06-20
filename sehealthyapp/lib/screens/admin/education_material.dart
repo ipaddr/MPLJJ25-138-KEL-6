@@ -166,7 +166,7 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
 
             const SizedBox(height: 16),
 
-            // List konten edukasi
+            // List content
             Expanded(
               child:
                   _filteredContents.isEmpty
@@ -180,7 +180,8 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                           final title = data['title'] ?? '';
                           final type = data['type'] ?? '';
                           final detail = data['detail'] ?? '';
-                          final mediaUrl = data['imageUrl'];
+                          final mediaUrl =
+                              data['mediaUrl']; // ← ini sudah diperbaiki
                           final thumbnailUrl = data['thumbnailUrl'];
                           final isVideo =
                               type.toString().toLowerCase() == 'video';
@@ -200,7 +201,7 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                             padding: const EdgeInsets.all(16),
                             child: Row(
                               children: [
-                                // Media thumbnail
+                                // Thumbnail
                                 Container(
                                   width: 60,
                                   height: 60,
@@ -222,14 +223,21 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                                           fit: BoxFit.cover,
                                           errorBuilder:
                                               (context, error, stackTrace) =>
-                                                  Container(
-                                                    color: Colors.grey,
-                                                    width: 60,
-                                                    height: 60,
-                                                    child: const Icon(
-                                                      Icons.broken_image,
-                                                    ),
+                                                  const Icon(
+                                                    Icons.broken_image,
                                                   ),
+                                          loadingBuilder: (
+                                            context,
+                                            child,
+                                            loadingProgress,
+                                          ) {
+                                            if (loadingProgress == null) {
+                                              return child;
+                                            }
+                                            return const CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            );
+                                          },
                                         ),
                                       ),
                                       if (isVideo)
@@ -243,7 +251,7 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                                 ),
                                 const SizedBox(width: 16),
 
-                                // Title & subtitle
+                                // Title and detail
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -268,7 +276,7 @@ class _EducationMaterialPageBodyState extends State<EducationMaterialPageBody> {
                                   ),
                                 ),
 
-                                // Edit & Delete
+                                // Actions
                                 IconButton(
                                   icon: const Icon(
                                     Icons.edit,

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '/services/gemini_service.dart';
+import '/models/tbc_result_model.dart';
+import 'tbc_result_screen.dart';
 
 class PageTBCScreening extends StatefulWidget {
   const PageTBCScreening({Key? key}) : super(key: key);
@@ -8,6 +11,9 @@ class PageTBCScreening extends StatefulWidget {
 }
 
 class _PageTbcScreeningState extends State<PageTBCScreening> {
+  final Map<String, String> _answers = {};
+  bool _isLoading = false;
+
   final List<Map<String, dynamic>> _questions = [
     {
       'icon': 'assets/images/img9.png',
@@ -47,53 +53,88 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
     },
     {
       'icon': 'assets/images/img12.png',
-      'question': 'Have you traveled to areas with high TBC prevalence recently?',
+      'question':
+          'Have you traveled to areas with high TBC prevalence recently?',
     },
   ];
 
-  final Map<int, String> _answers = {};
-
-  void _handleAnswer(int index, String answer) {
-    setState(() {
-      _answers[index] = answer;
-    });
-  }
-
-  void _handleSubmit() {
+  Future<void> _submitAnswers() async {
     if (_answers.length < _questions.length) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please answer all questions.')),
-      );
+      _showSnackBar('Please answer all questions before proceeding.');
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await GeminiService.analyzeTBCAnswers(
+        _answers,
+        _questions,
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (result != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TBCResultScreen(tbcResult: result),
+          ),
+        );
+      } else {
+        _showErrorDialog('Failed to retrieve analysis. Please try again.');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('An error occurred: ${e.toString()}');
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.orange,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text(
-          'Screening Completed',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: const Text(
-          'Thank you for completing the screening.',
-          style: TextStyle(fontFamily: 'Poppins'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            child: const Text(
-              'Close',
-              style: TextStyle(fontFamily: 'Poppins'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text(
+              'Error Occurred',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.bold,
+              ),
             ),
+            content: Text(
+              message,
+              style: const TextStyle(fontFamily: 'Poppins'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -119,7 +160,18 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
                   color: Color(0xFFE3F2FD),
                   shape: BoxShape.circle,
                 ),
-                child: Image.asset(data['icon'], width: 30, height: 30),
+                child: Image.asset(
+                  data['icon'],
+                  width: 30,
+                  height: 30,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.health_and_safety,
+                      size: 30,
+                      color: Colors.blue,
+                    );
+                  },
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -129,49 +181,66 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Poppins',
+                    color: Colors.black87,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _answerOption(index, 'Yes', Colors.blue.shade700),
-              const SizedBox(width: 16),
-              _answerOption(index, 'No', Colors.red.shade600),
-            ],
+            children:
+                ['Yes', 'No'].map((answer) {
+                  return Expanded(
+                    child: RadioListTile<String>(
+                      title: Text(
+                        answer,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      value: answer,
+                      groupValue: _answers['q$index'],
+                      activeColor: Colors.blue.shade700,
+                      onChanged: (value) {
+                        setState(() {
+                          _answers['q$index'] = value!;
+                        });
+                      },
+                    ),
+                  );
+                }).toList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _answerOption(int index, String label, Color color) {
-    bool isSelected = _answers[index] == label;
+  Widget _buildProgressIndicator() {
+    int answeredQuestions = _answers.length;
+    double progress = answeredQuestions / _questions.length;
 
-    Color selectedColor;
-    if (label == 'Yes') {
-      selectedColor = const Color(0xFF90CAF9); // Biru muda
-    } else {
-      selectedColor = const Color(0xFFEF9A9A); // Merah muda
-    }
-
-    return ElevatedButton(
-      onPressed: () => _handleAnswer(index, label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isSelected ? selectedColor : Colors.grey.shade300,
-        foregroundColor: Colors.black87,
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'Poppins',
-        ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Text(
+            'Progress: $answeredQuestions/${_questions.length} questions answered',
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.grey.shade300,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+          ),
+        ],
       ),
-      child: Text(label),
     );
   }
 
@@ -196,9 +265,10 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
       ),
       body: Column(
         children: [
+          _buildProgressIndicator(),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _questions.length,
               itemBuilder: (context, index) {
                 return _buildQuestionItem(index, _questions[index]);
@@ -208,20 +278,52 @@ class _PageTbcScreeningState extends State<PageTBCScreening> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: ElevatedButton(
-              onPressed: _handleSubmit,
+              onPressed: _isLoading ? null : _submitAnswers,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade700,
+                backgroundColor:
+                    _isLoading ? Colors.grey.shade400 : Colors.blue.shade700,
                 minimumSize: const Size.fromHeight(50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                textStyle: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins',
-                ),
+                elevation: _isLoading ? 0 : 2,
               ),
-              child: const Text('Submit'),
+              child:
+                  _isLoading
+                      ? const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Analyzing...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Poppins',
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      )
+                      : const Text(
+                        'Analyze Results',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Poppins',
+                          color: Colors.white,
+                        ),
+                      ),
             ),
           ),
         ],

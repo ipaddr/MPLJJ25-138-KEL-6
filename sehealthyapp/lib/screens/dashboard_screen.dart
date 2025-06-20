@@ -63,12 +63,14 @@ class DashboardContent extends StatefulWidget {
 class _DashboardContentState extends State<DashboardContent> {
   String fullname = 'Loading...';
   Map<String, dynamic>? upcomingCheckup;
+  String? photoUrl; // Tambahkan ini
 
   @override
   void initState() {
     super.initState();
     fetchUserFullname();
     fetchUpcomingCheckup();
+    fetchPhotoUrl(); // Tambahkan ini
   }
 
   Future<void> fetchUserFullname() async {
@@ -89,6 +91,27 @@ class _DashboardContentState extends State<DashboardContent> {
         fullname = 'User';
       });
       print('Error fetching fullName: $e');
+    }
+  }
+
+  Future<void> fetchPhotoUrl() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final doc =
+            await FirebaseFirestore.instance
+                .collection('biodata')
+                .doc(user.uid)
+                .get();
+        setState(() {
+          photoUrl = doc.data()?['photoUrl'];
+        });
+      }
+    } catch (e) {
+      print('Error fetching photoUrl: $e');
+      setState(() {
+        photoUrl = null;
+      });
     }
   }
 
@@ -137,11 +160,18 @@ class _DashboardContentState extends State<DashboardContent> {
                   CircleAvatar(
                     radius: 22,
                     backgroundColor: Colors.blueAccent,
-                    child: const Icon(
-                      Icons.person,
-                      size: 40,
-                      color: Colors.white,
-                    ),
+                    backgroundImage:
+                        (photoUrl != null && photoUrl!.isNotEmpty)
+                            ? NetworkImage(photoUrl!)
+                            : null,
+                    child:
+                        (photoUrl == null || photoUrl!.isEmpty)
+                            ? const Icon(
+                              Icons.person,
+                              size: 40,
+                              color: Colors.white,
+                            )
+                            : null,
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -162,6 +192,7 @@ class _DashboardContentState extends State<DashboardContent> {
                   ),
                 ],
               ),
+
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -305,7 +336,7 @@ class CardHealthCheckup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: const Color(0xFFADD2FF), // warna latar belakang biru muda
+      color: const Color(0xFFADD2FF),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
